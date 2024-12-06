@@ -18,7 +18,7 @@
 # -
 config:
 # Analytics Services
-- name: "builds/digit-analytics/dashboard-analytics"
+  - name: "builds/digit-analytics/dashboard-analytics"
     build:
       - work-dir: "dashboard-analytics"
         image-name: "dashboard-analytics"
