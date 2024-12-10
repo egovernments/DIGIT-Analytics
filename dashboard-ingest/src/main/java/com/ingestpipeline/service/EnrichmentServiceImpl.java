@@ -9,7 +9,8 @@ import java.util.Map;
 
 import com.ingestpipeline.model.SourceReferences;
 import com.ingestpipeline.model.TargetReferences;
-import org.apache.tomcat.util.codec.binary.Base64;
+
+import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

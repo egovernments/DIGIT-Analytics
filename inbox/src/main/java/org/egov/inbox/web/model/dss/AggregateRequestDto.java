@@ -3,7 +3,7 @@ package org.egov.inbox.web.model.dss;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Map;
 
 @Builder

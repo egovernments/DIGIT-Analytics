@@ -5,7 +5,7 @@ import lombok.*;
 import org.egov.common.contract.request.RequestInfo;
 import org.egov.inbox.web.model.InboxSearchCriteria;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 ;
 
