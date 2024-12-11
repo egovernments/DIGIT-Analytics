@@ -2,15 +2,11 @@ package com.ingestpipeline.service;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.ingestpipeline.model.SourceReferences;
 import com.ingestpipeline.model.TargetReferences;
 
-import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,28 +214,22 @@ public class EnrichmentServiceImpl implements EnrichmentService {
 	/**
 	 * A helper method to create the headers for Rest Connection with UserName and
 	 * Password
-	 * 
+	 *
 	 * @return HttpHeaders
 	 */
 	private HttpHeaders getHttpHeaders() {
 		HttpHeaders headers = new HttpHeaders();
-		headers.add(AUTHORIZATION, getBase64Value(userName, password));
+		headers.add(AUTHORIZATION, getESEncodedCredentials());
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		return headers;
 	}
 
-	/**
-	 * Helper Method to create the Base64Value for headers
-	 * 
-	 * @param userName
-	 * @param password
-	 * @return
-	 */
-	private String getBase64Value(String userName, String password) {
-		String authString = String.format("%s:%s", userName, password);
-		byte[] encodedAuthString = Base64.encodeBase64(authString.getBytes(Charset.forName(US_ASCII)));
-		return String.format(BASIC_AUTH, new String(encodedAuthString));
+	public String getESEncodedCredentials() {
+		String credentials = userName + ":" + password;
+		byte[] credentialsBytes = credentials.getBytes();
+		byte[] base64CredentialsBytes = Base64.getEncoder().encode(credentialsBytes);
+		return "Basic " + new String(base64CredentialsBytes);
 	}
 	
 	/**
