@@ -133,5 +133,11 @@ public class InboxConfiguration {
 
 	@Value("${es.search.default.sort.order}")
 	private String defaultSortOrder;
+
+	@Value("${services.esindexer.username}")
+	private String userName;
+
+	@Value("${services.esindexer.password}")
+	private String password;
 }
 
