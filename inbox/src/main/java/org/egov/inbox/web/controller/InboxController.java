@@ -7,6 +7,8 @@ import java.util.Map;
 import jakarta.validation.Valid;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.extern.slf4j.Slf4j;
+import org.egov.inbox.repository.builder.V2.InboxQueryBuilder;
 import org.egov.inbox.service.DSSInboxFilterService;
 import org.egov.inbox.service.ElasticSearchService;
 import org.egov.inbox.service.InboxService;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/v1")
+@Slf4j
 public class InboxController {
 	
 	@Autowired
@@ -40,8 +43,11 @@ public class InboxController {
 	@Autowired
 	private DSSInboxFilterService dssInboxService;
 
+	//@Autowired
+	//private ElasticSearchService elasticSearchService;
+
 	@Autowired
-	private ElasticSearchService elasticSearchService;
+	private InboxQueryBuilder inboxQueryBuilder;
 	
 	
 	@PostMapping(value = "/_search")
@@ -62,7 +68,7 @@ public class InboxController {
 
 	@PostMapping(value = "/elastic/_search")
 	public ResponseEntity<Map<String, Object>>  elasticSearch(@Valid @RequestBody InboxElasticSearchRequest request) {
-		Map<String, Object> data = elasticSearchService.search(request);
+		Map<String, Object> data = null;
 		return new ResponseEntity<>(data, HttpStatus.OK);
 	}
 	
