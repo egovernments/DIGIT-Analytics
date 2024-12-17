@@ -55,6 +55,22 @@
 			<groupId>org.egov</groupId>
 			<artifactId>mdms-client</artifactId>
 			<version>2.9.0-SNAPSHOT</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-databind</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-yaml</artifactId>
+			<version>2.17.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.17.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
@@ -78,6 +94,11 @@
 			<id>repo.egovernments.org.snapshots</id>
 			<name>eGov ERP Releases Repository</name>
 			<url>https://nexus-repo.egovernments.org/nexus/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>maven_central</id>
+			<name>Maven Central</name>
+			<url>https://repo.maven.apache.org/maven2/</url>
 		</repository>
 	</repositories>
 
