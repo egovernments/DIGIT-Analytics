@@ -10,6 +10,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.ingestpipeline.util.Constants;
 
+
 import javax.net.ssl.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -37,7 +38,7 @@ public class IngestApp {
 
 			// Disable hostname verification
 			HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
-				public boolean verify(String hostname, javax.net.ssl.SSLSession sslSession) {
+				public boolean verify(String hostname, SSLSession sslSession) {
 					return true;
 				}
 			});
