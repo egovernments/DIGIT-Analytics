@@ -3,8 +3,9 @@ package org.egov.inbox.web.model;
 import java.util.HashMap;
 import java.util.List;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.NotNull;
+import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.NotNull;
 
 import org.egov.inbox.web.model.workflow.ProcessInstanceSearchCriteria;
 
@@ -20,7 +21,8 @@ public class InboxSearchCriteria {
     @NotNull
     @JsonProperty("tenantId")
     private String tenantId;
-    
+
+    @Valid
     @JsonProperty("processSearchCriteria")
     private ProcessInstanceSearchCriteria processSearchCriteria;
     
