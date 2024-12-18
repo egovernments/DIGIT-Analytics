@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.naming.ServiceUnavailableException;
 
+
 /**
  * Wraps rest template with retry
  */
