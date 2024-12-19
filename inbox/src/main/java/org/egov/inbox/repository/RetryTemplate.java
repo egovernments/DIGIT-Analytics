@@ -1,5 +1,6 @@
 package org.egov.inbox.repository;
 
+import jakarta.ws.rs.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -9,8 +10,6 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
-
-import javax.naming.ServiceUnavailableException;
 
 /**
  * Wraps rest template with retry
