@@ -1,6 +1,5 @@
 package org.egov.inbox.web.controller;
 
-import lombok.extern.slf4j.Slf4j;
 import org.egov.common.utils.MultiStateInstanceUtil;
 import org.egov.inbox.repository.builder.V2.InboxQueryBuilder;
 import org.egov.inbox.service.V2.InboxServiceV2;
@@ -19,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+
 
 @RestController
 @RequestMapping("/v2")
