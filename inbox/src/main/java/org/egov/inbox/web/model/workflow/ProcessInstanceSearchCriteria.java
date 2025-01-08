@@ -1,12 +1,13 @@
 package org.egov.inbox.web.model.workflow;
 
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
 
-import javax.validation.constraints.NotNull;
-import java.util.List;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
 @Data
 public class ProcessInstanceSearchCriteria {

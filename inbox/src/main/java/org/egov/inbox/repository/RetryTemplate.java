@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import javax.naming.ServiceUnavailableException;
+import jakarta.ws.rs.ServiceUnavailableException;
 
 /**
  * Wraps rest template with retry

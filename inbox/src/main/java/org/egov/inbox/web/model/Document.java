@@ -3,13 +3,12 @@ package org.egov.inbox.web.model;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.validation.constraints.Size;
-
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.annotation.Generated;
+import jakarta.validation.constraints.Size;
 
 /**
  * This object holds list of documents attached during the transaciton for a property
