@@ -1,14 +1,12 @@
 package org.egov.inbox.config;
 
-import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
-import jakarta.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -139,11 +137,4 @@ public class InboxConfiguration {
 
 	@Value("${es.search.default.sort.order}")
 	private String defaultSortOrder;
-
-	@Value("${services.esindexer.username}")
-	private String userName;
-
-	@Value("${services.esindexer.password}")
-	private String password;
 }
-

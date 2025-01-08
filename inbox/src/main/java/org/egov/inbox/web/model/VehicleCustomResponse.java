@@ -3,7 +3,7 @@ package org.egov.inbox.web.model;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.validation.Valid;
+import javax.validation.Valid;
 
 import org.egov.common.contract.response.ResponseInfo;
 
