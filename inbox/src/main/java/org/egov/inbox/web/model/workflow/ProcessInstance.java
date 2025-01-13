@@ -82,8 +82,8 @@ public class ProcessInstance   {
         @JsonProperty("stateSla")
         private Long stateSla;
 
-        @JsonProperty("businessServiceSla")
-        private Long businessServiceSla;
+        @JsonProperty("businesssServiceSla")
+        private Long businesssServiceSla;
 
         @JsonProperty("previousStatus")
         @Size(max=128)
