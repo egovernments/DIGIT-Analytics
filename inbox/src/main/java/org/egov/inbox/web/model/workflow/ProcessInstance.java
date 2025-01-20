@@ -103,6 +103,10 @@ public class ProcessInstance   {
 
         @JsonProperty("escalated")
         private boolean escalated;
+        
+        /* for use of notification service in property*/
+        @JsonProperty("notificationAction")
+    	private String notificationAction;
 
         public ProcessInstance addDocumentsItem(Document documentsItem) {
             if (this.documents == null) {

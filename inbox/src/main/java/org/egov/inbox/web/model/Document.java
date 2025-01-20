@@ -42,6 +42,9 @@ public class Document   {
 
   @JsonProperty("auditDetails")
   private Map<String, Object> auditDetails;
+  
+  @JsonProperty("active")
+  private Boolean active;
 
   public Document id(String id) {
     this.id = id;
