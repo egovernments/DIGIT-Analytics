@@ -10,7 +10,6 @@ import org.egov.inbox.config.InboxConfiguration;
 import org.egov.inbox.web.model.InboxSearchCriteria;
 import org.egov.tracer.model.CustomException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 

@@ -34,6 +34,7 @@ import java.util.*;
 import static java.util.Objects.isNull;
 import static jakarta.servlet.http.HttpServletRequest.BASIC_AUTH;
 import static org.egov.inbox.util.DSSConstants.*;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 
 @Slf4j

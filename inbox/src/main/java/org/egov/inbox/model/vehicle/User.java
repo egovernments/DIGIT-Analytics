@@ -4,16 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-
 import org.egov.common.contract.request.Role;
-
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,34 +30,28 @@ public class User {
     private Long id;
 	 
     @Size(max=64)
-    
     @JsonProperty("uuid")
     private String uuid;
 
     @Size(max=64)
-    
     @JsonProperty("userName")
     private String userName;
     
 
     @Size(min=1,max=64)
-    
     @Pattern(regexp = "^[a-zA-Z \\-'`\\.]*$", message = "Invalid name. Only alphabets and special characters -, ',`, .")
     @JsonProperty("name")
     private String name;
 
     @Size(max=64)
-    
     @JsonProperty("password")
     private String password;
     
     @Size(max=64)
-    
     @JsonProperty("mobileNumber")
     private String mobileNumber;
     
     @Size(max=64)
-    
     @JsonProperty("tenantId")
     private String tenantId;
 
@@ -68,47 +60,38 @@ public class User {
     private String salutation;
 
     @Size(max=128)
-    
     @JsonProperty("emailId")
     private String emailId;
 
     @Size(max=50)
-    
     @JsonProperty("altContactNumber")
     private String altContactNumber;
 
     @Size(max=10)
-    
     @JsonProperty("pan")
     private String pan;
 
     @Pattern(regexp = "^[0-9]{12}$", message = "AdharNumber should be 12 digit number")
-    
     @JsonProperty("aadhaarNumber")
     private String aadhaarNumber;
 
     @Size(max=300)
-    
     @JsonProperty("permanentAddress")
     private String permanentAddress;
 
     @Size(max=300)
-    
     @JsonProperty("permanentCity")
     private String permanentCity;
 
     @Size(max=10)
-    
     @JsonProperty("permanentPinCode")
     private String permanentPincode;
 
     @Size(max=300)
-    
     @JsonProperty("correspondenceCity")
     private String correspondenceCity;
 
     @Size(max=10)
-    
     @JsonProperty("correspondencePinCode")
     private String correspondencePincode;
 
@@ -122,12 +105,10 @@ public class User {
     private Long pwdExpiryDate;
 
     @Size(max=16)
-    
     @JsonProperty("locale")
     private String locale;
 
     @Size(max=50)
-    
     @JsonProperty("type")
     private String type;
 
@@ -143,7 +124,6 @@ public class User {
     private List<Role> roles;
 
     @Size(max=32)
-    
     @JsonProperty("bloodGroup")
     private String bloodGroup;
 

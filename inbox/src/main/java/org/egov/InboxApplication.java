@@ -13,12 +13,13 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
-
-import java.util.concurrent.TimeUnit;
+import org.springframework.web.client.RestTemplate;
 
 import javax.net.ssl.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+
+import java.util.concurrent.TimeUnit;
 
 @SpringBootApplication
 @EnableAutoConfiguration
@@ -55,8 +56,6 @@ public class InboxApplication {
 	}
 
 	public static void main(String[] args) {
-
-		trustSelfSignedSSL();
 		SpringApplication.run(InboxApplication.class, args);
 	}
 
@@ -69,6 +68,12 @@ public class InboxApplication {
 		return new SpringCache2kCacheManager().addCaches(b->b.name("businessServices").expireAfterWrite(cacheExpiry, TimeUnit.MINUTES)
 				.entryCapacity(10)).addCaches(b->b.name("inboxConfiguration").expireAfterWrite(cacheExpiry, TimeUnit.MINUTES)
 				.entryCapacity(10));
+	}
+
+	@Bean
+	public RestTemplate restTemplate() {
+		trustSelfSignedSSL();
+		return new RestTemplate();
 	}
 
 }

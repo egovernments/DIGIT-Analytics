@@ -652,7 +652,6 @@ public class InboxService {
 			//When Bill Amendment objects are searched
 				for (String businessKey : businessKeys) {
 					Inbox inbox = new Inbox();
-
 					inbox.setProcessInstance(processInstanceMap.get(businessKey));
 					inbox.setBusinessObject(toMap((JSONObject) businessMap.get(businessKey)));
 					inbox.setServiceObject(toMap(
@@ -826,11 +825,10 @@ public class InboxService {
 			
 			statusCountMap=	aggregateStatusCountMap;
 			//log.info("removeStatusCountMap:: "+ new Gson().toJson(statusCountMap));
-
-            if(moduleSearchCriteria.containsKey("mobileNumber") || moduleSearchCriteria.containsKey("applicationNos"))
-            {
-                totalCount = inboxes.size();
-            }
+			 if(moduleSearchCriteria.containsKey("mobileNumber") || moduleSearchCriteria.containsKey("applicationNos"))
+	            {
+	                totalCount = inboxes.size();
+	            }
 		}
 		log.info("statusCountMap size :::: " + statusCountMap.size());
 		
@@ -1143,7 +1141,6 @@ public class InboxService {
 			if (!param.equalsIgnoreCase("tenantId")) {
 				if (param.equalsIgnoreCase("limit"))
 				    return;
-
 				if (moduleSearchCriteria.get(param) instanceof Collection) {
 					url.append("&").append(param).append("=");
 					url.append(StringUtils

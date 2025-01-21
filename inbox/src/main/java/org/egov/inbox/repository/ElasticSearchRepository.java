@@ -1,6 +1,9 @@
 package org.egov.inbox.repository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+
 import org.egov.inbox.config.InboxConfiguration;
 import org.egov.inbox.web.model.InboxSearchCriteria;
 import org.egov.tracer.model.CustomException;
@@ -12,9 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class ElasticSearchRepository {
@@ -23,6 +24,7 @@ public class ElasticSearchRepository {
 
     private ElasticSearchQueryBuilder queryBuilder;
 
+    @Autowired
     private RestTemplate restTemplate;
 
     private ObjectMapper mapper;
@@ -50,6 +52,7 @@ public class ElasticSearchRepository {
         String searchQuery = queryBuilder.getSearchQuery(criteria, uuids);
 
         HttpHeaders headers = getHttpHeaders();
+        
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> requestEntity = new HttpEntity<>(searchQuery, headers);
         ResponseEntity response = null;
@@ -83,7 +86,6 @@ public class ElasticSearchRepository {
 
         return builder.toString();
     }
-
     private HttpHeaders getHttpHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Authorization", getESEncodedCredentials());
@@ -102,5 +104,4 @@ public class ElasticSearchRepository {
         byte[] base64CredentialsBytes = Base64.getEncoder().encode(credentialsBytes);
         return "Basic " + new String(base64CredentialsBytes);
     }
-
 }
