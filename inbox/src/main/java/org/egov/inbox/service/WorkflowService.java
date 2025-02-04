@@ -125,7 +125,7 @@ public class WorkflowService {
                     Map<String, Object> statusRequest = new HashMap<>();
                     statusRequest.put("RequestInfo", requestInfo);
                     statusRequest.put("ProcessInstanceSearchCriteria", criteria);
-		    url.append("&tenantId=").append(criteria.getTenantId());
+		    url.append("?tenantId=").append(criteria.getTenantId());
                     finalResponse = (List<HashMap<String, Object>>) serviceRequestRepository.fetchListResult(url, statusRequest);
                     criteria.setBusinessService(inputBusinessSrvs);
                 } else {
