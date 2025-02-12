@@ -116,10 +116,10 @@ public class ElasticService implements IESService {
 	public ResponseEntity<Object> post(String index, String type, String id, String authToken, String requestNode) {
 
 		StringBuilder uriBuilder = new StringBuilder(indexerServiceHost.concat(index).concat(SLASH_SEPERATOR).concat(type).concat(SLASH_SEPERATOR).concat(id));
-		HttpHeaders headers = new HttpHeaders();
+		HttpHeaders headers = getHttpHeaders();
 		if(authToken != null && !authToken.isEmpty())
 			headers.add("Authorization", "Bearer "+ authToken );
-		headers.setContentType(MediaType.APPLICATION_JSON);
+//		headers.setContentType(MediaType.APPLICATION_JSON);
 
 		HttpEntity<String> requestEntity = null;
 		if(requestNode != null ) requestEntity = new HttpEntity<>(requestNode, headers);
@@ -157,8 +157,8 @@ public class ElasticService implements IESService {
     public Map search(String index, String searchQuery) throws Exception {
 
         String url = indexServiceHost + index + indexServiceHostSearch;
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpHeaders headers = getHttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_JSON);
 
         LOGGER.info("searching ES for query::" + searchQuery + "::on::" + index + "::ON URL::" + url);
 
@@ -195,8 +195,8 @@ public class ElasticService implements IESService {
 		LOGGER.info("url ## " +url);
 
 
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
+		HttpHeaders headers = getHttpHeaders();
+//		headers.setContentType(MediaType.APPLICATION_JSON);
 
 		LOGGER.info("Posting request to ES on ::" + collectionIndexName + " with doc id:: "+docId);
 
@@ -228,8 +228,8 @@ public class ElasticService implements IESService {
 		Long currentDateTime = new Date().getTime();
 		String url = indexerServiceHost + targetIndexName + DOC_TYPE + requestBody.getId();
 
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
+		HttpHeaders headers = getHttpHeaders();
+//		headers.setContentType(MediaType.APPLICATION_JSON);
 
 		LOGGER.info("Posting request to ES on ## " + targetIndexName);
 		LOGGER.info("request body on ### " +requestBody);
@@ -314,8 +314,8 @@ public class ElasticService implements IESService {
     public List searchMultiple(String index, String searchQuery) throws Exception {
 
         String url = indexServiceHost + index + indexServiceHostSearch;
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpHeaders headers = getHttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_JSON);
 
         LOGGER.info("searching searchMultiple ES for query::" + searchQuery + "::on::" + index + "::ON URL::" + url);
 
