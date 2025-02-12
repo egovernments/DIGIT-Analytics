@@ -191,7 +191,7 @@ public class ElasticService implements IESService {
 
 
 		String docId = id!=null ? id.toString(): trxid.toString();
-		StringBuilder url = new StringBuilder().append(indexerServiceHost).append(collectionIndexName).append(SLASH_SEPERATOR).append(DOC_PATH).append(SLASH_SEPERATOR).append(docId);
+		StringBuilder url = new StringBuilder().append(indexerServiceHost).append(collectionIndexName).append(SLASH_SEPERATOR).append(docId);
 		LOGGER.info("url ## " +url);
 
 
