@@ -160,6 +160,8 @@ public class ElasticService implements IESService {
         HttpHeaders headers = getHttpHeaders();
 //        headers.setContentType(MediaType.APPLICATION_JSON);
 
+		LOGGER.info("headers"+headers.toString());
+
         LOGGER.info("searching ES for query::" + searchQuery + "::on::" + index + "::ON URL::" + url);
 
         HttpEntity<String> requestEntity = new HttpEntity<>(searchQuery, headers);
@@ -197,7 +199,7 @@ public class ElasticService implements IESService {
 
 		HttpHeaders headers = getHttpHeaders();
 //		headers.setContentType(MediaType.APPLICATION_JSON);
-
+		LOGGER.info("Headers: " + headers.toString());
 		LOGGER.info("Posting request to ES on ::" + collectionIndexName + " with doc id:: "+docId);
 
 		JsonNode request = new ObjectMapper().convertValue(requestBody, JsonNode.class);
