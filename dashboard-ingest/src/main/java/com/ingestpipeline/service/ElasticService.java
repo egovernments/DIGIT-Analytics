@@ -1,12 +1,7 @@
 package com.ingestpipeline.service;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import org.elasticsearch.action.search.SearchRequest;
@@ -74,6 +69,12 @@ public class ElasticService implements IESService {
 	@Value("${es.index.searchQuery.payment}")
 	private String searchQueryPayment;
 
+	@Value("${services.esindexer.username}")
+	private String userName;
+	
+	@Value("${services.esindexer.password}")
+	private String password;
+
 	@Autowired
 	private RestTemplate restTemplate;
 
@@ -115,10 +116,10 @@ public class ElasticService implements IESService {
 	public ResponseEntity<Object> post(String index, String type, String id, String authToken, String requestNode) {
 
 		StringBuilder uriBuilder = new StringBuilder(indexerServiceHost.concat(index).concat(SLASH_SEPERATOR).concat(type).concat(SLASH_SEPERATOR).concat(id));
-		HttpHeaders headers = new HttpHeaders();
+		HttpHeaders headers = getHttpHeaders();
 		if(authToken != null && !authToken.isEmpty())
 			headers.add("Authorization", "Bearer "+ authToken );
-		headers.setContentType(MediaType.APPLICATION_JSON);
+//		headers.setContentType(MediaType.APPLICATION_JSON);
 
 		HttpEntity<String> requestEntity = null;
 		if(requestNode != null ) requestEntity = new HttpEntity<>(requestNode, headers);
@@ -156,8 +157,10 @@ public class ElasticService implements IESService {
     public Map search(String index, String searchQuery) throws Exception {
 
         String url = indexServiceHost + index + indexServiceHostSearch;
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpHeaders headers = getHttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_JSON);
+
+		LOGGER.info("headers"+headers.toString());
 
         LOGGER.info("searching ES for query::" + searchQuery + "::on::" + index + "::ON URL::" + url);
 
@@ -191,12 +194,13 @@ public class ElasticService implements IESService {
 
 		String docId = id!=null ? id.toString(): trxid.toString();
 		StringBuilder url = new StringBuilder().append(indexerServiceHost).append(collectionIndexName).append(SLASH_SEPERATOR).append(DOC_PATH).append(SLASH_SEPERATOR).append(docId);
+
 		LOGGER.info("url ## " +url);
 
 
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-
+		HttpHeaders headers = getHttpHeaders();
+//		headers.setContentType(MediaType.APPLICATION_JSON);
+		LOGGER.info("Headers: " + headers.toString());
 		LOGGER.info("Posting request to ES on ::" + collectionIndexName + " with doc id:: "+docId);
 
 		JsonNode request = new ObjectMapper().convertValue(requestBody, JsonNode.class);
@@ -227,8 +231,8 @@ public class ElasticService implements IESService {
 		Long currentDateTime = new Date().getTime();
 		String url = indexerServiceHost + targetIndexName + DOC_TYPE + requestBody.getId();
 
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
+		HttpHeaders headers = getHttpHeaders();
+//		headers.setContentType(MediaType.APPLICATION_JSON);
 
 		LOGGER.info("Posting request to ES on ## " + targetIndexName);
 		LOGGER.info("request body on ### " +requestBody);
@@ -313,8 +317,8 @@ public class ElasticService implements IESService {
     public List searchMultiple(String index, String searchQuery) throws Exception {
 
         String url = indexServiceHost + index + indexServiceHostSearch;
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpHeaders headers = getHttpHeaders();
+//        headers.setContentType(MediaType.APPLICATION_JSON);
 
         LOGGER.info("searching searchMultiple ES for query::" + searchQuery + "::on::" + index + "::ON URL::" + url);
 
@@ -432,10 +436,22 @@ public class ElasticService implements IESService {
 	
 
 	
-	private HttpHeaders getHttpHeaders() { 
+	private HttpHeaders getHttpHeaders() {
 		HttpHeaders headers = new HttpHeaders();
+		headers.add("Authorization", getESEncodedCredentials());
+		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 		headers.setContentType(MediaType.APPLICATION_JSON);
+		List<MediaType> mediaTypes = new ArrayList<>();
+		mediaTypes.add(MediaType.APPLICATION_JSON);
+		headers.setAccept(mediaTypes);
 		return headers;
+	}
+
+	public String getESEncodedCredentials() {
+		String credentials = userName + ":" + password;
+		byte[] credentialsBytes = credentials.getBytes();
+		byte[] base64CredentialsBytes = Base64.getEncoder().encode(credentialsBytes);
+		return "Basic " + new String(base64CredentialsBytes);
 	}
 
 
