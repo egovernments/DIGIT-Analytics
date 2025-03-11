@@ -15,7 +15,7 @@ import org.springframework.core.io.support.ResourcePatternUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ObjectUtils;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -24,6 +24,7 @@ import java.util.Map;
 
 @Import({TracerConfiguration.class})
 @Component("configurationLoader")
+
 public class ConfigurationLoader {
 
     private static Logger logger = LoggerFactory.getLogger(ConfigurationLoader.class);

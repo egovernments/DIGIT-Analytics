@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpHost;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.egov.common.contract.request.RequestInfo;
 import org.egov.common.contract.request.Role;
@@ -17,6 +16,7 @@ import org.egov.inbox.web.model.elasticsearch.InboxElasticSearchCriteria;
 import org.egov.inbox.web.model.elasticsearch.InboxElasticSearchRequest;
 import org.egov.inbox.web.model.elasticsearch.UserDetailResponse;
 import org.egov.tracer.model.CustomException;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -25,17 +25,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
-import javax.annotation.PostConstruct;
-import java.nio.charset.Charset;
+import jakarta.annotation.PostConstruct;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static java.util.Objects.isNull;
-import static javax.servlet.http.HttpServletRequest.BASIC_AUTH;
-import static org.apache.commons.codec.CharEncoding.US_ASCII;
+import static jakarta.servlet.http.HttpServletRequest.BASIC_AUTH;
 import static org.egov.inbox.util.DSSConstants.*;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+
 
 @Slf4j
 @Service
@@ -61,15 +61,20 @@ public class ElasticSearchService {
 
     private String internalMicroserviceRoleUuid = null;
 
+    public static final String TENANTID_MDC_STRING = "TENANTID";
 
     @PostConstruct
     void initalizeSystemuser(){
+
+        // Adding in MDC so that tracer can add it in header
+        MDC.put(TENANTID_MDC_STRING, config.getStateLevelTenantId());
+
         RequestInfo requestInfo = new RequestInfo();
         StringBuilder uri = new StringBuilder();
         uri.append(config.getUserHost()).append(config.getUserSearchEndpoint()); // URL for user search call
         Map<String, Object> userSearchRequest = new HashMap<>();
         userSearchRequest.put("RequestInfo", requestInfo);
-        userSearchRequest.put("tenantId", config.getParentLevelTenantId());
+        userSearchRequest.put("tenantId", config.getStateLevelTenantId());
         userSearchRequest.put("roleCodes", Collections.singletonList(INTERNALMICROSERVICEROLE_CODE));
         try {
             LinkedHashMap<String, Object> responseMap = (LinkedHashMap<String, Object>) serviceRequestRepository.fetchResult(uri, userSearchRequest);
@@ -88,10 +93,10 @@ public class ElasticSearchService {
         //Creating role with INTERNAL_MICROSERVICE_ROLE
         Role role = Role.builder()
                 .name(INTERNALMICROSERVICEROLE_NAME).code(INTERNALMICROSERVICEROLE_CODE)
-                .tenantId(config.getParentLevelTenantId()).build();
+                .tenantId(config.getStateLevelTenantId()).build();
         User user = User.builder().userName(INTERNALMICROSERVICEUSER_USERNAME)
                 .name(INTERNALMICROSERVICEUSER_NAME).mobileNumber(INTERNALMICROSERVICEUSER_MOBILENO)
-                .type(INTERNALMICROSERVICEUSER_TYPE).tenantId(config.getParentLevelTenantId())
+                .type(INTERNALMICROSERVICEUSER_TYPE).tenantId( config.getStateLevelTenantId())
                 .roles(Collections.singletonList(role)).id(0L).build();
 
         userCreateRequest.put("RequestInfo", requestInfo);
@@ -303,8 +308,10 @@ public class ElasticSearchService {
         return usersUuid;
     }
 
-    private HttpHeaders getHttpHeaders() {
+
+    public HttpHeaders getHttpHeaders() {
         HttpHeaders headers = new HttpHeaders();
+        headers.add(AUTHORIZATION, getBase64Value(config.getEsUserName(), config.getEsPassword()));
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -314,9 +321,10 @@ public class ElasticSearchService {
         return headers;
     }
 
+    // TODO: Need to check if  encodeBase64 method call implementation is correct or not.
     private String getBase64Value(String userName, String password) {
         String authString = String.format("%s:%s", userName, password);
-        byte[] encodedAuthString = Base64.encodeBase64(authString.getBytes(Charset.forName(US_ASCII)));
+        byte[] encodedAuthString = Base64.encodeBase64(authString.getBytes(StandardCharsets.US_ASCII),false);
         return String.format(BASIC_AUTH, new String(encodedAuthString));
     }
 

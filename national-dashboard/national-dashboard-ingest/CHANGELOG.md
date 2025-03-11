@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to this module will be documented in this file.
 
+## 1.1.0 - 2025-03-11
+- 2.9 LTS Upgrade
+- Jackson Dependency Fixed
+
 ## 1.0.1 - 2023-02-06
 
 - Transition from 1.0.1-beta version to 1.0.1 version

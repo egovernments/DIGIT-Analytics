@@ -1,14 +1,12 @@
 package org.egov.inbox.config;
 
-import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
-import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -85,6 +83,12 @@ public class InboxConfiguration {
 	@Value("${egov.mdms.search.endpoint}")
 	private String mdmsSearchEndPoint;
 
+	@Value("${egov.es.username}")
+	private String esUserName;
+
+	@Value("${egov.es.password}")
+	private String esPassword;
+
 	@Value("${services.esindexer.host}")
 	private String indexServiceHost;
 
@@ -103,7 +107,7 @@ public class InboxConfiguration {
 	@Value("${egov.internal.microservice.user.uuid}")
 	private String egovInternalMicroserviceUserUuid;
 
-	@Value("${state.level.tenant.id}")
+	@Value("${parent.level.tenant.id}")
 	private String parentLevelTenantId;
 
 	// ES Config
@@ -133,5 +137,11 @@ public class InboxConfiguration {
 
 	@Value("${es.search.default.sort.order}")
 	private String defaultSortOrder;
-}
+	
 
+	@Value("${services.esindexer.username}")
+	private String userName;
+
+	@Value("${services.esindexer.password}")
+	private String password;
+}

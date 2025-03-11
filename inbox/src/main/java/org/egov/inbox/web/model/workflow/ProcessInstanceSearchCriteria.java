@@ -1,11 +1,13 @@
 package org.egov.inbox.web.model.workflow;
 
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Data;
 
-import java.util.List;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 
 @Data
 public class ProcessInstanceSearchCriteria {
@@ -41,6 +43,7 @@ public class ProcessInstanceSearchCriteria {
     @JsonProperty("limit")
     private Integer limit;
 
+    @NotNull
     @JsonProperty("businessService")
     private List<String> businessService;
 

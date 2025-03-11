@@ -1,6 +1,9 @@
 package org.egov.inbox.repository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+
 import org.egov.inbox.config.InboxConfiguration;
 import org.egov.inbox.web.model.InboxSearchCriteria;
 import org.egov.tracer.model.CustomException;
@@ -12,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.List;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 public class ElasticSearchRepository {
@@ -21,6 +24,7 @@ public class ElasticSearchRepository {
 
     private ElasticSearchQueryBuilder queryBuilder;
 
+    @Autowired
     private RestTemplate restTemplate;
 
     private ObjectMapper mapper;
@@ -47,7 +51,8 @@ public class ElasticSearchRepository {
 
         String searchQuery = queryBuilder.getSearchQuery(criteria, uuids);
 
-        HttpHeaders headers = new HttpHeaders();
+        HttpHeaders headers = getHttpHeaders();
+        
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> requestEntity = new HttpEntity<>(searchQuery, headers);
         ResponseEntity response = null;
@@ -81,5 +86,22 @@ public class ElasticSearchRepository {
 
         return builder.toString();
     }
+    private HttpHeaders getHttpHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", getESEncodedCredentials());
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
+        List<MediaType> mediaTypes = new ArrayList<>();
+        mediaTypes.add(MediaType.APPLICATION_JSON);
+        headers.setAccept(mediaTypes);
+        return headers;
+    }
+
+    public String getESEncodedCredentials() {
+        String credentials = config.getUserName() + ":" + config.getPassword();
+        byte[] credentialsBytes = credentials.getBytes();
+        byte[] base64CredentialsBytes = Base64.getEncoder().encode(credentialsBytes);
+        return "Basic " + new String(base64CredentialsBytes);
+    }
 }

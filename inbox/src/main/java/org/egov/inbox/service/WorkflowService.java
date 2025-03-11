@@ -17,6 +17,7 @@ import org.egov.inbox.repository.ServiceRequestRepository;
 import org.egov.inbox.util.BpaConstants;
 import org.egov.inbox.util.ErrorConstants;
 import org.egov.inbox.util.FSMConstants;
+import org.egov.inbox.web.model.InboxRequest;
 import org.egov.inbox.web.model.RequestInfoWrapper;
 import org.egov.inbox.web.model.workflow.BusinessService;
 import org.egov.inbox.web.model.workflow.BusinessServiceResponse;
@@ -25,6 +26,7 @@ import org.egov.inbox.web.model.workflow.ProcessInstanceSearchCriteria;
 import org.egov.tracer.model.CustomException;
 import org.egov.inbox.web.model.workflow.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -123,6 +125,7 @@ public class WorkflowService {
                     Map<String, Object> statusRequest = new HashMap<>();
                     statusRequest.put("RequestInfo", requestInfo);
                     statusRequest.put("ProcessInstanceSearchCriteria", criteria);
+		    url.append("?tenantId=").append(criteria.getTenantId());
                     finalResponse = (List<HashMap<String, Object>>) serviceRequestRepository.fetchListResult(url, statusRequest);
                     criteria.setBusinessService(inputBusinessSrvs);
                 } else {
@@ -180,6 +183,69 @@ public class WorkflowService {
 		}
 		return response.getBusinessServices().get(0);
 	}
+
+
+	@Cacheable(value="businessServices")
+	public List<BusinessService> getBusinessServices(InboxRequest request) {
+		String tenantId = request.getInbox().getTenantId();
+		RequestInfo requestInfo = request.getRequestInfo() ;
+		List<String> businessServicesCodes = request.getInbox().getProcessSearchCriteria().getBusinessService();
+		String businessServiceList = String.join(",",businessServicesCodes);
+		StringBuilder url = getSearchURLWithParams(tenantId, businessServiceList);
+		RequestInfoWrapper requestInfoWrapper = RequestInfoWrapper.builder().requestInfo(requestInfo).build();
+		Object result = serviceRequestRepository.fetchResult(url, requestInfoWrapper);
+		BusinessServiceResponse response = null;
+		try {
+			response = mapper.convertValue(result, BusinessServiceResponse.class);
+		} catch (IllegalArgumentException e) {
+			throw new CustomException(ErrorConstants.PARSING_ERROR, "Failed to parse response of Workflow");
+		}
+		return response.getBusinessServices();
+	}
+
+
+	public Map<String,String> getStatusIdToBusinessServiceMap(List<BusinessService> businessServices){
+
+		Map<String,String> statusIdToBusinessServiceMap = new HashMap<>();
+
+		businessServices.forEach(businessService -> {
+			businessService.getStates().forEach(state -> {
+				statusIdToBusinessServiceMap.put(state.getUuid(), businessService.getBusinessService());
+			 }
+			);
+		});
+
+		return statusIdToBusinessServiceMap;
+	}
+
+	public Map<String,String> getApplicationStatusIdToStatusMap(List<BusinessService> businessServices){
+
+		Map<String,String> statusIdToApplicationStatusMap = new HashMap<>();
+
+		businessServices.forEach(businessService -> {
+			businessService.getStates().forEach(state -> {
+				statusIdToApplicationStatusMap.put(state.getUuid(), state.getApplicationStatus());
+					}
+			);
+		});
+
+		return statusIdToApplicationStatusMap;
+	}
+
+	public Map<String,String> getApplicationStatusIdToStateMap(List<BusinessService> businessServices){
+
+		Map<String,String> statusIdToApplicationStateMap = new HashMap<>();
+
+		businessServices.forEach(businessService -> {
+			businessService.getStates().forEach(state -> {
+				statusIdToApplicationStateMap.put(state.getUuid(), state.getState());
+					}
+			);
+		});
+
+		return statusIdToApplicationStateMap;
+	}
+
 	
 	private StringBuilder buildWorkflowUrl(ProcessInstanceSearchCriteria criteria, StringBuilder url,boolean noStatus) {
 		url.append("?tenantId=").append(criteria.getTenantId());
