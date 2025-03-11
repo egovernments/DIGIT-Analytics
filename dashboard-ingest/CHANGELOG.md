@@ -2,6 +2,11 @@
 
 All notable changes to this module will be documented in this file.
 
+## 1.2.0-SNAPSHOT - 2025-03-11
+- 2.9 LTS Upgrade
+- Removed explicitly defined version of some dependency as those dependencies version will be managed by spring boot parent 
+- Added Elastic Search Changes related to SSL certification and changes related to elastic credentials
+
 ## 1.1.4 - 2023-02-02
 
 - Transition from 1.1.4-beta version to 1.1.4 version

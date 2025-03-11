@@ -2,6 +2,10 @@
 # Changelog
 All notable changes to this module will be documented in this file.
 
+## 1.4.0 - 2025-03-11
+- 2.9 LTS Upgrade
+- Added Elastic Search Changes related to SSL certification and changes related to elastic credentials
+
 ## 1.3.1 - 2023-08-11
 - Central Instance Library Integration
 
