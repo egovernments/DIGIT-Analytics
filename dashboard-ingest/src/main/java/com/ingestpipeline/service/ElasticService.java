@@ -171,7 +171,9 @@ public class ElasticService implements IESService {
 
             Map responseNode = new ObjectMapper().convertValue(response.getBody(), Map.class);
 			Map hits = (Map)responseNode.get("hits");
-            if((Integer)hits.get("total") >=1)
+			Map<String, Object> totalMap = (Map<String, Object>) hits.get("total");
+			Integer totalValue = (Integer) totalMap.get("value");
+            if(totalValue >=1)
                 return (Map)((ArrayList)hits.get("hits")).get(0);
 
         } catch (HttpClientErrorException e) {
