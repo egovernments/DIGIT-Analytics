@@ -2,10 +2,6 @@ package org.egov.inbox.web.model;
 
 
 import org.egov.inbox.model.vehicle.User;
-
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
 //
 public class RequestInfo {
     private String apiId;
@@ -285,7 +281,7 @@ public class RequestInfo {
     }
 
     protected boolean canEqual(final Object other) {
-        return other instanceof org.egov.common.contract.request.RequestInfo;
+        return other instanceof RequestInfo;
     }
 
     public int hashCode() {

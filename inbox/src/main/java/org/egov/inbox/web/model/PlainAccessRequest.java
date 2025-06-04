@@ -36,7 +36,7 @@ public class PlainAccessRequest {
     public boolean equals(final Object o) {
         if (o == this) {
             return true;
-        } else if (!(o instanceof org.egov.common.contract.request.PlainAccessRequest)) {
+        } else if (!(o instanceof PlainAccessRequest)) {
             return false;
         } else {
             PlainAccessRequest other = (PlainAccessRequest)o;
@@ -69,7 +69,7 @@ public class PlainAccessRequest {
     }
 
     protected boolean canEqual(final Object other) {
-        return other instanceof org.egov.common.contract.request.PlainAccessRequest;
+        return other instanceof PlainAccessRequest;
     }
 
     public int hashCode() {
@@ -99,8 +99,8 @@ public class PlainAccessRequest {
             return this;
         }
 
-        public org.egov.common.contract.request.PlainAccessRequest build() {
-            return new org.egov.common.contract.request.PlainAccessRequest(this.recordId, this.plainRequestFields);
+        public PlainAccessRequest build() {
+            return new PlainAccessRequest(this.recordId, this.plainRequestFields);
         }
 
         public String toString() {
