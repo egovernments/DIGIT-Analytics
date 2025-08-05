@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.springframework.validation.annotation.Validated;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -17,7 +18,7 @@ import jakarta.validation.constraints.Size;
 @Validated
 @Generated(value = "io.swagger.codegen.v3.generators.java.SpringCodegen", date = "2020-12-09T07:13:46.742Z[GMT]")
 
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Document   {
   @JsonProperty("id")
   private String id = null;

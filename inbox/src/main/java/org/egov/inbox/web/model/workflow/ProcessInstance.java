@@ -8,6 +8,7 @@ import org.egov.inbox.web.model.AuditDetails;
 import org.egov.inbox.web.model.Document;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -28,6 +29,7 @@ import lombok.ToString;
 @Builder
 @EqualsAndHashCode(of = {"id"})
 @ToString
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ProcessInstance   {
 
         @Size(max=64)
