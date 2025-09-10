@@ -1,0 +1,15 @@
+[
+  {
+    "operation": "shift",
+    "spec": {
+      "tradelicense": {
+        "tradetype": "tradeType",
+        "tradeunits": {
+          "*": {
+            "tradetype": "tradeUnits[&1].tradeType"
+          }
+        }
+      }
+    }
+  }
+]

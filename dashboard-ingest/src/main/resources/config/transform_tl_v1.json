@@ -14,7 +14,13 @@
 				"accountid": "tradeLicense.accountId",
 				"applicationdate": "tradeLicense.applicationDate",
 				"oldpropertyid": "tradeLicense.oldPropertyId",
-				"action": "tradeLicense.action"
+				"action": "tradeLicense.action",
+				"tradetype": "tradeType",
+				"tradeunits": {
+					"*": {
+						"tradetype": "tradeUnits[&1].tradeType"
+					}
+				}
 			},
 			"ward": "ward"
 		}
