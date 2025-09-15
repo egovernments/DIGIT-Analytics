@@ -171,7 +171,19 @@ public class ElasticService implements IESService {
 
             Map responseNode = new ObjectMapper().convertValue(response.getBody(), Map.class);
 			Map hits = (Map)responseNode.get("hits");
-            if((Integer)hits.get("total") >=1)
+			
+			// Handle both old and new ES total format
+			int totalHits = 0;
+			Object total = hits.get("total");
+			if (total instanceof Integer) {
+				totalHits = (Integer) total;
+			} else if (total instanceof Map) {
+				Map totalMap = (Map) total;
+				totalHits = (Integer) totalMap.get("value");
+			}
+			
+			LOGGER.info("Total hits found: {}", totalHits);
+            if(totalHits >= 1)
                 return (Map)((ArrayList)hits.get("hits")).get(0);
 
         } catch (HttpClientErrorException e) {
@@ -329,7 +341,19 @@ public class ElasticService implements IESService {
 
             Map responseNode = new ObjectMapper().convertValue(response.getBody(), Map.class);
 			Map hits = (Map)responseNode.get("hits");
-            if((Integer)hits.get("total") >=1)
+			
+			// Handle both old and new ES total format
+			int totalHits = 0;
+			Object total = hits.get("total");
+			if (total instanceof Integer) {
+				totalHits = (Integer) total;
+			} else if (total instanceof Map) {
+				Map totalMap = (Map) total;
+				totalHits = (Integer) totalMap.get("value");
+			}
+			
+			LOGGER.info("SearchMultiple total hits found: {}", totalHits);
+            if(totalHits >= 1)
                 return (List) ((ArrayList)hits.get("hits"));
 
         } catch (HttpClientErrorException e) {
@@ -357,7 +381,18 @@ public class ElasticService implements IESService {
 					Object.class);
 			Map responseNode = new ObjectMapper().convertValue(response.getBody(), Map.class);
 			hits = (Map) responseNode.get("hits");
-			if ((Integer) hits.get("total") >= 1) {
+			
+			// Handle both old and new ES total format
+			int totalHits = 0;
+			Object total = hits.get("total");
+			if (total instanceof Integer) {
+				totalHits = (Integer) total;
+			} else if (total instanceof Map) {
+				Map totalMap = (Map) total;
+				totalHits = (Integer) totalMap.get("value");
+			}
+			
+			if (totalHits >= 1) {
 				hitsToMap.put("hits", ((ArrayList) hits.get("hits")));
 				return hitsToMap;
 			}
@@ -394,7 +429,18 @@ public class ElasticService implements IESService {
 			Map<String, List<JsonObject>> hitsToMap = new LinkedHashMap();
 			Map hits = new LinkedHashMap();
 			hits = (Map) responseNode.get("hits");
-			if ((Integer) hits.get("total") >= 1) {
+			
+			// Handle both old and new ES total format
+			int totalHits = 0;
+			Object total = hits.get("total");
+			if (total instanceof Integer) {
+				totalHits = (Integer) total;
+			} else if (total instanceof Map) {
+				Map totalMap = (Map) total;
+				totalHits = (Integer) totalMap.get("value");
+			}
+			
+			if (totalHits >= 1) {
 				hitsToMap.put("hits", ((ArrayList) hits.get("hits")));
 			}
 			
