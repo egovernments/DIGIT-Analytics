@@ -5,13 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.codec.binary.Base64;
-import org.egov.common.contract.request.RequestInfo;
 import org.egov.common.contract.request.Role;
-import org.egov.common.contract.request.User;
 import org.egov.common.utils.MultiStateInstanceUtil;
 import org.egov.inbox.config.InboxConfiguration;
+import org.egov.inbox.model.vehicle.User;
 import org.egov.inbox.repository.RetryTemplate;
 import org.egov.inbox.repository.ServiceRequestRepository;
+import org.egov.inbox.web.model.RequestInfo;
 import org.egov.inbox.web.model.elasticsearch.InboxElasticSearchCriteria;
 import org.egov.inbox.web.model.elasticsearch.InboxElasticSearchRequest;
 import org.egov.inbox.web.model.elasticsearch.UserDetailResponse;
@@ -97,7 +97,7 @@ public class ElasticSearchService {
         User user = User.builder().userName(INTERNALMICROSERVICEUSER_USERNAME)
                 .name(INTERNALMICROSERVICEUSER_NAME).mobileNumber(INTERNALMICROSERVICEUSER_MOBILENO)
                 .type(INTERNALMICROSERVICEUSER_TYPE).tenantId( config.getStateLevelTenantId())
-                .roles(Collections.singletonList(role)).id(0L).build();
+                .roles(Collections.singletonList(role)).id(0L).active(true).build();
 
         userCreateRequest.put("RequestInfo", requestInfo);
         userCreateRequest.put("user", user);

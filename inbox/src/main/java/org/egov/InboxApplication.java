@@ -14,6 +14,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import jakarta.annotation.PostConstruct;
 
 import javax.net.ssl.*;
 import java.security.cert.CertificateException;
@@ -61,6 +65,14 @@ public class InboxApplication {
 
 	@Value("${cache.expiry.minutes}")
 	private int cacheExpiry;
+	
+	@Autowired
+	private ObjectMapper objectMapper;
+	
+	@PostConstruct
+	public void configureObjectMapper() {
+		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	}
 
 	@Bean
 	@Profile("!test")
