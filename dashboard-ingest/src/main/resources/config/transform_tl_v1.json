@@ -15,10 +15,11 @@
 				"applicationdate": "tradeLicense.applicationDate",
 				"oldpropertyid": "tradeLicense.oldPropertyId",
 				"action": "tradeLicense.action",
-				"tradetype": "tradeType",
-				"tradeunits": {
-					"*": {
-						"tradetype": "tradeUnits[&1].tradeType"
+				"tradelicensedetail": {
+					"tradeunits": {
+						"*": {
+							"tradetype": "tradeType"
+						}
 					}
 				}
 			},
