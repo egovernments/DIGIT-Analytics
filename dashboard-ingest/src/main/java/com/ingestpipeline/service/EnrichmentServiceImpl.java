@@ -162,9 +162,13 @@ public class EnrichmentServiceImpl implements EnrichmentService {
 					}
 					LOGGER.info("Query node "+ queryNode);
 					Map domainNode = elasticService.search(indexName, queryNode.toString());
+					LOGGER.info("DEBUG: domainNode from ES search: {}", domainNode != null ? "NOT NULL" : "NULL");
 					if(domainNode != null){
+						LOGGER.info("DEBUG: Raw domainNode structure: {}", domainNode);
 						Object transDomainResponse = enrichTransform.transform(domainNode, businessTypeVal.toString());
+						LOGGER.info("DEBUG: Transformed domain response: {}", transDomainResponse);
 						incomingData.put("domainObject", transDomainResponse);
+						LOGGER.info("DEBUG: Added domainObject to incomingData. IncomingData keys: {}", incomingData.keySet());
 						enhanceData(incomingData);
 
 					} else {

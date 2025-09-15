@@ -54,7 +54,9 @@ public class EnrichTransform {
             Chainr chainr = Chainr.fromSpec( chainrSpecJSON );
 
             Object indexData = rawResponseNode.keySet().contains("_source") ? ((Map)rawResponseNode.get("_source")).get("Data") : null;
+            LOGGER.info("DEBUG: Raw indexData before JOLT transformation: {}", indexData);
             transNode = indexData!= null ? chainr.transform(indexData) : null;
+            LOGGER.info("DEBUG: JOLT transformed result: {}", transNode);
 
 		} catch (Exception e) {
 			LOGGER.error("Encountered an error : businessService {} ", e.getMessage());
