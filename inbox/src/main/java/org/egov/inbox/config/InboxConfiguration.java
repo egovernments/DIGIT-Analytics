@@ -144,4 +144,7 @@ public class InboxConfiguration {
 
 	@Value("${services.esindexer.password}")
 	private String password;
+
+	@Value("${inbox.include.terminate.states}")
+	private Boolean includeTerminateStates;
 }
