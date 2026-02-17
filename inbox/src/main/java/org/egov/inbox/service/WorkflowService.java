@@ -345,18 +345,7 @@ public class WorkflowService {
                          List<State> states = service.getStates();
                          states.forEach(state -> {
                              Set<String> stateRoles = stateToRoleMap.get(state.getUuid());
-							 boolean hasMatchingRoles = !CollectionUtils.isEmpty(stateRoles) && !Collections.disjoint(stateRoles,entry.getValue());
-
-							 // Add if user has matching roles
-							 if(hasMatchingRoles){
-								 actionableStatuses.put(state.getUuid(), state.getApplicationStatus());
-							 }
-
-							 // Add terminate states if configured
-							 if(config.getIncludeTerminateStates() != null
-									 && config.getIncludeTerminateStates()
-									 && state.getIsTerminateState() != null
-									 && state.getIsTerminateState()){
+							 if(!CollectionUtils.isEmpty(stateRoles) && !Collections.disjoint(stateRoles,entry.getValue())){
                                  actionableStatuses.put(state.getUuid(), state.getApplicationStatus());
                              }
 
