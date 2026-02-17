@@ -144,7 +144,4 @@ public class InboxConfiguration {
 
 	@Value("${services.esindexer.password}")
 	private String password;
-
-	@Value("${inbox.show.closed.applications}")
-	private Boolean includeTerminateStates;
 }
