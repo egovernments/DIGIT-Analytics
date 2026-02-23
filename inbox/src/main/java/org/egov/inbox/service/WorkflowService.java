@@ -33,8 +33,10 @@ import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class WorkflowService {
 
 	private InboxConfiguration config;
@@ -321,40 +323,96 @@ public class WorkflowService {
      */
 
     public HashMap<String,String> getActionableStatusesForRole(RequestInfo requestInfo, List<BusinessService> businessServices,ProcessInstanceSearchCriteria criteria){
+        log.info("========== GET ACTIONABLE STATUSES FOR ROLE - START ==========");
 
         String tenantId;
         List<String> userRoleCodes;
         Map<String,List<String>> tenantIdToUserRolesMap = getTenantIdToUserRolesMap(requestInfo);
+        log.info("TenantId to User Roles Map: {}", tenantIdToUserRolesMap);
+
         Map<String,List<BusinessService>> tenantIdToBuisnessSevicesMap =  getTenantIdToBuisnessSevicesMap(businessServices);
+        log.info("TenantId to BusinessServices Map: {}", tenantIdToBuisnessSevicesMap.keySet());
+        tenantIdToBuisnessSevicesMap.forEach((key, value) ->
+            log.info("  TenantId: {}, BusinessServices: {}", key, value.stream().map(BusinessService::getBusinessService).collect(java.util.stream.Collectors.toList())));
+
         Map<String,Set<String>> stateToRoleMap = getStateToRoleMap(businessServices);
+        log.info("State to Role Map (size: {})", stateToRoleMap.size());
+
         HashMap<String,String> actionableStatuses = new HashMap<>();
-        
+        log.info("Criteria TenantId: {}", criteria.getTenantId());
+        log.info("includeTerminateStates config: {}", config.getIncludeTerminateStates());
+
         for(Map.Entry<String,List<String>> entry : tenantIdToUserRolesMap.entrySet()){
-        	
+            log.info("--- Processing User Roles Entry ---");
+            log.info("  Entry TenantId: {}, Roles: {}", entry.getKey(), entry.getValue());
+
         	String statelevelTenantId=entry.getKey().split("\\.")[0];
-        	
-            if(entry.getKey().equals(criteria.getTenantId()) || (entry.getValue().contains(FSMConstants.FSM_DSO) && entry.getKey().equals(statelevelTenantId)) ){
+            log.info("  State level TenantId: {}", statelevelTenantId);
+
+            boolean tenantIdMatches = entry.getKey().equals(criteria.getTenantId());
+            boolean isDSORole = entry.getValue().contains(FSMConstants.FSM_DSO) && entry.getKey().equals(statelevelTenantId);
+            log.info("  TenantId matches criteria? {}", tenantIdMatches);
+            log.info("  Is DSO role? {}", isDSORole);
+
+            if(tenantIdMatches || isDSORole){
+                log.info("  MATCHED! Processing business services for this tenant");
+
                 List<BusinessService> businessServicesByTenantId = new ArrayList();
                 if(entry.getKey().split("\\.").length==1){
                     businessServicesByTenantId = tenantIdToBuisnessSevicesMap.get(criteria.getTenantId());
+                    log.info("  Single level tenant, using criteria tenantId: {}", criteria.getTenantId());
               }else{
                     businessServicesByTenantId = tenantIdToBuisnessSevicesMap.get(entry.getKey());
+                    log.info("  Multi-level tenant, using entry key: {}", entry.getKey());
               }
+
+                log.info("  BusinessServices found: {}", businessServicesByTenantId != null ? businessServicesByTenantId.size() : 0);
+
                 if(businessServicesByTenantId != null ) {
                 	 businessServicesByTenantId.forEach(service -> {
+                         log.info("    Processing BusinessService: {}", service.getBusinessService());
                          List<State> states = service.getStates();
+                         log.info("      States count: {}", states != null ? states.size() : 0);
+
                          states.forEach(state -> {
+                             log.info("      --- Processing State ---");
+                             log.info("        State: {}, UUID: {}, IsTerminate: {}", state.getState(), state.getUuid(), state.getIsTerminateState());
+
                              Set<String> stateRoles = stateToRoleMap.get(state.getUuid());
-                             if(!CollectionUtils.isEmpty(stateRoles) && !Collections.disjoint(stateRoles,entry.getValue())){
+                             log.info("        Roles for this state: {}", stateRoles);
+
+                             boolean hasMatchingRoles = !CollectionUtils.isEmpty(stateRoles) && !Collections.disjoint(stateRoles,entry.getValue());
+                             log.info("        User roles: {}", entry.getValue());
+                             log.info("        Has matching roles? {}", hasMatchingRoles);
+
+                             // Add if user has matching roles
+                             if(hasMatchingRoles){
                                  actionableStatuses.put(state.getUuid(), state.getApplicationStatus());
+                                 log.info("        ADDED as actionable (role match): {} -> {}", state.getUuid(), state.getApplicationStatus());
+                             }
+
+                             // Add terminate states if configured
+                             if(config.getIncludeTerminateStates() != null
+                                 && config.getIncludeTerminateStates()
+                                 && state.getIsTerminateState() != null
+                                 && state.getIsTerminateState()){
+                                 actionableStatuses.put(state.getUuid(), state.getApplicationStatus());
+                                 log.info("        ADDED as actionable (terminate state): {} -> {}", state.getUuid(), state.getApplicationStatus());
                              }
 
                          });
                      });
+                } else {
+                    log.warn("  BusinessServices is NULL for tenantId!");
                 }
-               
-            }         
+
+            } else {
+                log.info("  NOT MATCHED, skipping this tenant");
+            }
         }
+
+        log.info("Final Actionable Statuses: {}", actionableStatuses);
+        log.info("========== GET ACTIONABLE STATUSES FOR ROLE - END ==========");
         return actionableStatuses;
     }
     

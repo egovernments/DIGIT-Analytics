@@ -66,15 +66,37 @@ public class InboxServiceV2 {
      */
     public InboxResponse getInboxResponse(InboxRequest inboxRequest){
 
+        log.info("====== INBOX V2 SERVICE - START ======");
+        log.info("Request - TenantId: {}, ModuleName: {}, BusinessService: {}",
+            inboxRequest.getInbox().getTenantId(),
+            inboxRequest.getInbox().getProcessSearchCriteria().getModuleName(),
+            inboxRequest.getInbox().getProcessSearchCriteria().getBusinessService());
+
         validator.validateSearchCriteria(inboxRequest);
         InboxQueryConfiguration inboxQueryConfiguration = mdmsUtil.getConfigFromMDMS(inboxRequest.getInbox().getTenantId(), inboxRequest.getInbox().getProcessSearchCriteria().getModuleName());
+        log.info("MDMS Config - Index: {}, Module: {}", inboxQueryConfiguration.getIndex(), inboxQueryConfiguration.getModule());
+
         hashParamsWhereverRequiredBasedOnConfiguration(inboxRequest.getInbox().getModuleSearchCriteria(), inboxQueryConfiguration);
         List<Inbox> items = getInboxItems(inboxRequest, inboxQueryConfiguration.getIndex());
+        log.info("Fetched {} inbox items", items != null ? items.size() : 0);
+
         enrichProcessInstanceInInboxItems(items);
-        Integer totalCount = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? 0 : getTotalApplicationCount(inboxRequest, inboxQueryConfiguration.getIndex());
-        List<HashMap<String, Object>> statusCountMap = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? new ArrayList<>() : getStatusCountMap(inboxRequest, inboxQueryConfiguration.getIndex());
-        Integer nearingSlaCount = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? 0 : getApplicationsNearingSlaCount(inboxRequest, inboxQueryConfiguration.getIndex());
+
+        log.info("Status list before totalCount: {}", inboxRequest.getInbox().getProcessSearchCriteria().getStatus());
+        boolean isStatusEmpty = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus());
+        log.info("Is status list empty? {}", isStatusEmpty);
+
+        Integer totalCount = isStatusEmpty ? 0 : getTotalApplicationCount(inboxRequest, inboxQueryConfiguration.getIndex());
+        log.info("Total count: {}", totalCount);
+
+        List<HashMap<String, Object>> statusCountMap = isStatusEmpty ? new ArrayList<>() : getStatusCountMap(inboxRequest, inboxQueryConfiguration.getIndex());
+        log.info("StatusCountMap size: {}, Content: {}", statusCountMap != null ? statusCountMap.size() : 0, statusCountMap);
+
+        Integer nearingSlaCount = isStatusEmpty ? 0 : getApplicationsNearingSlaCount(inboxRequest, inboxQueryConfiguration.getIndex());
+        log.info("Nearing SLA count: {}", nearingSlaCount);
+
         InboxResponse inboxResponse = InboxResponse.builder().items(items).totalCount(totalCount).statusMap(statusCountMap).nearingSlaCount(nearingSlaCount).build();
+        log.info("====== INBOX V2 SERVICE - END ======");
 
         return inboxResponse;
     }
@@ -138,28 +160,51 @@ public class InboxServiceV2 {
     }
 
     private void enrichActionableStatusesFromRole(InboxRequest inboxRequest, List<BusinessService> businessServices) {
+        log.info("--- Enriching Actionable Statuses ---");
         ProcessInstanceSearchCriteria processCriteria = inboxRequest.getInbox().getProcessSearchCriteria();
         String tenantId = inboxRequest.getInbox().getTenantId();
         processCriteria.setTenantId(tenantId);
 
+        log.info("ProcessCriteria - TenantId: {}, BusinessService: {}, Existing Status: {}",
+            tenantId, processCriteria.getBusinessService(), processCriteria.getStatus());
+
+        log.info("BusinessServices received: {}", businessServices != null ? businessServices.size() : 0);
+        if (businessServices != null) {
+            businessServices.forEach(bs -> log.info("  - BusinessService: {}, TenantId: {}, States count: {}",
+                bs.getBusinessService(), bs.getTenantId(), bs.getStates() != null ? bs.getStates().size() : 0));
+        }
+
         HashMap<String, String> StatusIdNameMap = workflowService.getActionableStatusesForRole(inboxRequest.getRequestInfo(), businessServices,
                 inboxRequest.getInbox().getProcessSearchCriteria());
-        log.info(StatusIdNameMap.toString());
+        log.info("Actionable StatusIdNameMap: {}", StatusIdNameMap);
+        log.info("StatusIdNameMap size: {}", StatusIdNameMap.values().size());
+
         List<String> actionableStatusUuid = new ArrayList<>();
         if (StatusIdNameMap.values().size() > 0) {
             if (!CollectionUtils.isEmpty(processCriteria.getStatus())) {
+                log.info("Filtering existing status list against actionable statuses");
                 processCriteria.getStatus().forEach(statusUuid -> {
                     if(StatusIdNameMap.keySet().contains(statusUuid)){
                         actionableStatusUuid.add(statusUuid);
+                        log.info("  - Matched status UUID: {}", statusUuid);
+                    } else {
+                        log.info("  - Skipped status UUID (not actionable): {}", statusUuid);
                     }
                 });
                 inboxRequest.getInbox().getProcessSearchCriteria().setStatus(actionableStatusUuid);
+                log.info("Filtered actionable statuses: {}", actionableStatusUuid);
             } else {
+                log.info("No existing status list, using all actionable statuses from workflow");
                 inboxRequest.getInbox().getProcessSearchCriteria().setStatus(new ArrayList<>(StatusIdNameMap.keySet()));
+                log.info("Set actionable statuses: {}", StatusIdNameMap.keySet());
             }
         }else{
+            log.warn("NO ACTIONABLE STATUSES FOUND! Setting empty status list.");
             inboxRequest.getInbox().getProcessSearchCriteria().setStatus(new ArrayList<>());
         }
+
+        log.info("Final status list after enrichment: {}", inboxRequest.getInbox().getProcessSearchCriteria().getStatus());
+        log.info("--- Actionable Statuses Enrichment Complete ---");
     }
 
     public Integer getTotalApplicationCount(InboxRequest inboxRequest, String indexName){
@@ -177,12 +222,37 @@ public class InboxServiceV2 {
     }
 
     public List<HashMap<String, Object>> getStatusCountMap(InboxRequest inboxRequest, String indexName){
+        log.info("--- Getting Status Count Map ---");
+        log.info("Index name: {}", indexName);
+        log.info("Actionable statuses from request: {}", inboxRequest.getInbox().getProcessSearchCriteria().getStatus());
+
         Map<String, Object> finalQueryBody = queryBuilder.getStatusCountQuery(inboxRequest);
+        log.info("ES Aggregation Query: {}", finalQueryBody);
+
         StringBuilder uri = getURI(indexName, SEARCH_PATH);
+        log.info("ES URI: {}", uri);
+
         Map<String, Object> response = (Map<String, Object>) serviceRequestRepository.fetchESResult(uri, finalQueryBody);
+        log.info("ES Response received: {}", response != null ? "Yes" : "No");
+        if (response != null) {
+            log.info("ES Response keys: {}", response.keySet());
+            if (response.containsKey("aggregations")) {
+                log.info("Aggregations found: {}", response.get("aggregations"));
+            } else {
+                log.warn("No 'aggregations' key in ES response!");
+            }
+        }
+
         Set<String> actionableStatuses = new HashSet<>(inboxRequest.getInbox().getProcessSearchCriteria().getStatus());
+        log.info("Actionable statuses set: {}", actionableStatuses);
+
         HashMap<String, Object> statusCountMap = parseStatusCountMapFromAggregationResponse(response, actionableStatuses);
+        log.info("Parsed statusCountMap: {}", statusCountMap);
+
         List<HashMap<String, Object>> transformedStatusMap = transformStatusMap(inboxRequest, statusCountMap);
+        log.info("Transformed statusCountMap: {}", transformedStatusMap);
+        log.info("--- Status Count Map Complete ---");
+
         return transformedStatusMap;
     }
 
@@ -210,46 +280,96 @@ public class InboxServiceV2 {
     }
 
     private List<HashMap<String,Object>> transformStatusMap(InboxRequest request,HashMap<String, Object> statusCountMap) {
+        log.info("--- Transforming Status Map ---");
+        log.info("Input statusCountMap: {}", statusCountMap);
 
-        if(CollectionUtils.isEmpty(statusCountMap))
+        if(CollectionUtils.isEmpty(statusCountMap)) {
+            log.warn("StatusCountMap is empty or null! Returning null.");
             return null;
+        }
 
         List<BusinessService> businessServices = workflowService.getBusinessServices(request);
+        log.info("BusinessServices for transformation: {}", businessServices != null ? businessServices.size() : 0);
 
         Map<String,String> statusIdToBusinessServiceMap = workflowService.getStatusIdToBusinessServiceMap(businessServices);
+        log.info("StatusId to BusinessService mapping: {}", statusIdToBusinessServiceMap);
+
         Map<String, String> statusIdToApplicationStatusMap = workflowService.getApplicationStatusIdToStatusMap(businessServices);
+        log.info("StatusId to ApplicationStatus mapping: {}", statusIdToApplicationStatusMap);
+
         Map<String, String> statusIdToApplicationStateMap = workflowService.getApplicationStatusIdToStateMap(businessServices);
+        log.info("StatusId to State mapping: {}", statusIdToApplicationStateMap);
 
         List<HashMap<String,Object>> statusCountMapTransformed = new ArrayList<>();
 
         for(Map.Entry<String, Object> entry : statusCountMap.entrySet()){
             String statusId = entry.getKey();
             Integer count = (Integer) entry.getValue();
+            log.info("Transforming entry - StatusId: {}, Count: {}", statusId, count);
+
             HashMap<String, Object> map = new HashMap<>();
             map.put(COUNT_CONSTANT, count);
             map.put(APPLICATION_STATUS_KEY,statusIdToApplicationStatusMap.get(statusId));
             map.put(BUSINESSSERVICE_KEY,statusIdToBusinessServiceMap.get(statusId));
             map.put(STATUSID_KEY, statusId);
             map.put(STATE,statusIdToApplicationStateMap.get(statusId));
+
+            log.info("  Transformed entry: {}", map);
             statusCountMapTransformed.add(map);
         }
+
+        log.info("Total transformed entries: {}", statusCountMapTransformed.size());
+        log.info("--- Status Map Transformation Complete ---");
         return statusCountMapTransformed;
     }
 
     private HashMap<String, Object> parseStatusCountMapFromAggregationResponse(Map<String, Object> response, Set<String> actionableStatuses) {
+        log.info("--- Parsing Status Count from Aggregation Response ---");
+        log.info("Actionable statuses to filter: {}", actionableStatuses);
+
         List<HashMap<String, Object>> statusCountResponse = new ArrayList<>();
-        if(!CollectionUtils.isEmpty((Map<String, Object>) response.get(AGGREGATIONS_KEY))){
+
+        Map<String, Object> aggregations = (Map<String, Object>) response.get(AGGREGATIONS_KEY);
+        log.info("Aggregations object: {}", aggregations);
+
+        if(!CollectionUtils.isEmpty(aggregations)){
+            log.info("Aggregations not empty, parsing buckets using JSONPath: {}", STATUS_COUNT_AGGREGATIONS_BUCKETS_PATH);
+
             List<Map<String, Object>> statusCountBuckets = JsonPath.read(response, STATUS_COUNT_AGGREGATIONS_BUCKETS_PATH);
+            log.info("Buckets found: {}", statusCountBuckets != null ? statusCountBuckets.size() : 0);
+
+            if (statusCountBuckets != null) {
+                statusCountBuckets.forEach(bucket -> log.info("  Bucket: {}", bucket));
+            }
+
             HashMap<String, Object> statusCountMap = new HashMap<>();
             statusCountBuckets.forEach(bucket -> {
-                if(actionableStatuses.contains(bucket.get(KEY)))
-                    statusCountMap.put((String)bucket.get(KEY), bucket.get(DOC_COUNT_KEY));
-            });
-            statusCountResponse.add(statusCountMap);
-        }
-        if(CollectionUtils.isEmpty(statusCountResponse))
-            return null;
+                String bucketKey = (String) bucket.get(KEY);
+                Object docCount = bucket.get(DOC_COUNT_KEY);
+                log.info("  Processing bucket - Key: {}, DocCount: {}, IsActionable: {}",
+                    bucketKey, docCount, actionableStatuses.contains(bucketKey));
 
+                if(actionableStatuses.contains(bucketKey)) {
+                    statusCountMap.put(bucketKey, docCount);
+                    log.info("    Added to statusCountMap");
+                } else {
+                    log.info("    Skipped (not in actionable statuses)");
+                }
+            });
+
+            log.info("Final statusCountMap after filtering: {}", statusCountMap);
+            statusCountResponse.add(statusCountMap);
+        } else {
+            log.warn("Aggregations object is empty or null!");
+        }
+
+        if(CollectionUtils.isEmpty(statusCountResponse)) {
+            log.warn("StatusCountResponse is empty! Returning null.");
+            return null;
+        }
+
+        log.info("Returning parsed status count map: {}", statusCountResponse.get(0));
+        log.info("--- Parsing Complete ---");
         return statusCountResponse.get(0);
     }
 
