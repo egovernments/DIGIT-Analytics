@@ -21,6 +21,10 @@ public class InboxConstants {
 
     public static final String SORT_BY_CONSTANT = "sortBy";
 
+    public static final String LIMIT_CONSTANT = "limit";
+
+    public static final String OFFSET_CONSTANT = "offset";
+
     public static final String CURRENT_PROCESS_INSTANCE_CONSTANT = "currentProcessInstance";
 
     public static final String COUNT_CONSTANT = "count";
