@@ -333,7 +333,14 @@ public class WorkflowService {
         	
         	String statelevelTenantId=entry.getKey().split("\\.")[0];
         	
-            if(entry.getKey().equals(criteria.getTenantId()) || (entry.getValue().contains(FSMConstants.FSM_DSO) && entry.getKey().equals(statelevelTenantId)) ){
+            // Match if role tenantId equals criteria tenantId (exact city match),
+            // OR if role tenantId is the state-level prefix of criteria tenantId
+            // (e.g. roles tagged to "mz" should match criteria "mz.chimoio"),
+            // OR FSM_DSO special case for state-level matching.
+            String criteriaStateTenantId = criteria.getTenantId().split("\\.")[0];
+            if(entry.getKey().equals(criteria.getTenantId())
+                    || entry.getKey().equals(criteriaStateTenantId)
+                    || (entry.getValue().contains(FSMConstants.FSM_DSO) && entry.getKey().equals(statelevelTenantId)) ){
                 List<BusinessService> businessServicesByTenantId = new ArrayList();
                 if(entry.getKey().split("\\.").length==1){
                     businessServicesByTenantId = tenantIdToBuisnessSevicesMap.get(criteria.getTenantId());
