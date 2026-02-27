@@ -16,6 +16,8 @@ import org.springframework.util.ObjectUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.egov.inbox.util.InboxConstants.LIMIT_CONSTANT;
+import static org.egov.inbox.util.InboxConstants.OFFSET_CONSTANT;
 import static org.egov.inbox.util.InboxConstants.SORT_BY_CONSTANT;
 import static org.egov.inbox.util.InboxConstants.SORT_ORDER_CONSTANT;
 
@@ -40,6 +42,11 @@ public class ValidatorDefaultImplementation implements SearchCriteriaValidatorIn
 
         HashMap<String,Object> moduleSearchCriteria = inboxRequest.getInbox().getModuleSearchCriteria();
 
+        // Remove pagination params — they are handled at the inbox level,
+        // not as ES search criteria. Leaving them causes invalid ES queries.
+        moduleSearchCriteria.remove(LIMIT_CONSTANT);
+        moduleSearchCriteria.remove(OFFSET_CONSTANT);
+
         // Check if all mandatory fields exist in search criteria
         Set<String> mandatoryTrueFields = isMandatoryMap.entrySet().stream()
             .filter(entry -> Boolean.TRUE.equals(entry.getValue()))
@@ -57,13 +64,15 @@ public class ValidatorDefaultImplementation implements SearchCriteriaValidatorIn
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            if(!(key.equals(SORT_ORDER_CONSTANT) || key.equals(SORT_BY_CONSTANT))) {
+            // Skip pagination and sorting params — these are not search criteria
+            if(key.equals(SORT_ORDER_CONSTANT) || key.equals(SORT_BY_CONSTANT)
+                    || key.equals(LIMIT_CONSTANT) || key.equals(OFFSET_CONSTANT)) {
+                continue;
+            }
 
-                if (isMandatoryMap.get(key)) {
-                    if (ObjectUtils.isEmpty(value)) {
-                        errorMap.put("INVALID_SEARCH_CRITERIA", "Field cannot be null or empty: " + key);
-                    }
-                }
+            Boolean isMandatory = isMandatoryMap.get(key);
+            if (isMandatory != null && isMandatory && ObjectUtils.isEmpty(value)) {
+                errorMap.put("INVALID_SEARCH_CRITERIA", "Field cannot be null or empty: " + key);
             }
         }
 
@@ -89,13 +98,15 @@ public class ValidatorDefaultImplementation implements SearchCriteriaValidatorIn
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            if(!(key.equals(SORT_ORDER_CONSTANT) || key.equals(SORT_BY_CONSTANT))) {
+            // Skip pagination and sorting params — these are not search criteria
+            if(key.equals(SORT_ORDER_CONSTANT) || key.equals(SORT_BY_CONSTANT)
+                    || key.equals(LIMIT_CONSTANT) || key.equals(OFFSET_CONSTANT)) {
+                continue;
+            }
 
-                if (isMandatoryMap.get(key)) {
-                    if (ObjectUtils.isEmpty(value)) {
-                        errorMap.put("INVALID_SEARCH_CRITERIA", "Field cannot be null or empty: " + key);
-                    }
-                }
+            Boolean isMandatory = isMandatoryMap.get(key);
+            if (isMandatory != null && isMandatory && ObjectUtils.isEmpty(value)) {
+                errorMap.put("INVALID_SEARCH_CRITERIA", "Field cannot be null or empty: " + key);
             }
         }
 
