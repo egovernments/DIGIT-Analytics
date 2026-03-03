@@ -24,7 +24,6 @@ import java.util.Map;
 
 @Import({TracerConfiguration.class})
 @Component("configurationLoader")
-
 public class ConfigurationLoader {
 
     private static Logger logger = LoggerFactory.getLogger(ConfigurationLoader.class);

@@ -2,11 +2,8 @@
 
 All notable changes to this module will be documented in this file.
 
-## 1.2.0 - 2025-03-11
-- 2.9 LTS Upgrade
-- Removed explicitly defined version of some dependency as those dependencies version will be managed by spring boot parent 
-- Added Elastic Search Changes related to SSL certification and changes related to elastic credentials
-
+## 1.1.9 - 2023-08-11
+- Central Instance Library Integration
 
 ## 1.1.8 - 2023-02-02
 
