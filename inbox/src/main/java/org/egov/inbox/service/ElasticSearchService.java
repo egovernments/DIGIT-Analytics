@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.egov.common.contract.request.Role;
 import org.egov.common.utils.MultiStateInstanceUtil;
 import org.egov.inbox.config.InboxConfiguration;
@@ -321,11 +320,11 @@ public class ElasticSearchService {
         return headers;
     }
 
-    // TODO: Need to check if  encodeBase64 method call implementation is correct or not.
     private String getBase64Value(String userName, String password) {
         String authString = String.format("%s:%s", userName, password);
-        byte[] encodedAuthString = Base64.encodeBase64(authString.getBytes(StandardCharsets.US_ASCII),false);
-        return String.format(BASIC_AUTH, new String(encodedAuthString));
+        byte[] credentialsBytes = authString.getBytes();
+        byte[] base64CredentialsBytes = Base64.getEncoder().encode(credentialsBytes);
+        return String.format(BASIC_AUTH, new String(base64CredentialsBytes));
     }
 
     /**
