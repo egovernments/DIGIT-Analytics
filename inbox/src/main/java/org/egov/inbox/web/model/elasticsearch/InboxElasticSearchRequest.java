@@ -1,6 +1,6 @@
 package org.egov.inbox.web.model.elasticsearch;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
