@@ -120,7 +120,7 @@ public class InboxServiceV2 {
     }
 
     private InboxQuery inboxQuery(InboxRequest inboxRequest, InboxQueryConfiguration configuration) {
-        return new InboxQuery(configuration, inboxRequest.getInbox().getModuleSearchCriteria(),
+        return new InboxQuery(configuration, inboxRequest.getInbox().getTenantId(), inboxRequest.getInbox().getModuleSearchCriteria(),
                 inboxRequest.getInbox().getProcessSearchCriteria(), inboxRequest.getInbox().getOffset(), inboxRequest.getInbox().getLimit());
     }
 
@@ -319,7 +319,7 @@ public class InboxServiceV2 {
 
     private List<Data> getDataFromSimpleSearch(SearchRequest searchRequest, InboxQueryConfiguration configuration) {
         IndexSearchCriteria criteria = searchRequest.getIndexSearchCriteria();
-        InboxQuery query = new InboxQuery(configuration, criteria.getModuleSearchCriteria(), null, criteria.getOffset(), criteria.getLimit());
+        InboxQuery query = new InboxQuery(configuration, criteria.getTenantId(), criteria.getModuleSearchCriteria(), null, criteria.getOffset(), criteria.getLimit());
         List<Map<String, Object>> documents = stores.forConfig(configuration).search(query);
 
         List<Data> dataList = new ArrayList<>();

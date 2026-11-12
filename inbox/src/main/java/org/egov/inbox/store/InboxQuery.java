@@ -7,22 +7,33 @@ import java.util.Map;
 import org.egov.inbox.web.model.V2.InboxQueryConfiguration;
 import org.egov.inbox.web.model.V2.SortParam;
 import org.egov.inbox.web.model.workflow.ProcessInstanceSearchCriteria;
+import org.egov.tracer.model.CustomException;
 
 /**
  * One inbox search, independent of the store that answers it: the module's configuration, the
- * caller's module criteria (as sent, including sortOrder), the process criteria the service filled in
- * (tenant, actionable states, ...; null for a plain index search) and the page.
+ * request's tenant, the caller's module criteria (as sent, including sortOrder), the process criteria
+ * the service filled in (tenant, actionable states, ...; null for a plain index search) and the page.
  */
 public record InboxQuery(InboxQueryConfiguration config,
+                         String tenantId,
                          Map<String, Object> moduleCriteria,
                          ProcessInstanceSearchCriteria processCriteria,
                          Integer offset,
                          Integer limit) {
 
-    /** The request's sortOrder when given, else the configuration's default order. */
+    /**
+     * The request's sortOrder when given (ASC or DESC, any case), else the configuration's default
+     * order. Any other value is the caller's error.
+     */
     public SortParam.Order sortOrder() {
-        return moduleCriteria.containsKey(SORT_ORDER_CONSTANT)
-                ? SortParam.Order.valueOf((String) moduleCriteria.get(SORT_ORDER_CONSTANT))
-                : config.getSortParam().getOrder();
+        if (moduleCriteria == null || !moduleCriteria.containsKey(SORT_ORDER_CONSTANT)) {
+            return config.getSortParam().getOrder();
+        }
+        Object requested = moduleCriteria.get(SORT_ORDER_CONSTANT);
+        SortParam.Order order = requested instanceof String s ? SortParam.Order.fromValue(s.trim()) : null;
+        if (order == null) {
+            throw new CustomException("INVALID_SEARCH_CRITERIA", "sortOrder must be ASC or DESC, got '" + requested + "'");
+        }
+        return order;
     }
 }

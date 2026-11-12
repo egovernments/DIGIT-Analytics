@@ -65,6 +65,6 @@ class InboxQueryBuilderTest {
     private static InboxQuery query(InboxQueryConfiguration config) {
         ProcessInstanceSearchCriteria process = new ProcessInstanceSearchCriteria();
         process.setStatus(List.of("s1"));
-        return new InboxQuery(config, new HashMap<>(), process, 0, 10);
+        return new InboxQuery(config, "dev", new HashMap<>(), process, 0, 10);
     }
 }
