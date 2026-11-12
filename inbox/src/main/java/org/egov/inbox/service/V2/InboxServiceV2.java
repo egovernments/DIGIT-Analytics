@@ -182,6 +182,8 @@ public class InboxServiceV2 {
                 Long createdTime = ((Number) auditDetails.get(CREATED_TIME_KEY)).longValue();
                 String businessService = JsonPath.read(data, BUSINESS_SERVICE_PATH);
                 Long businessServiceSLA = businessServiceSlaMap.get(businessService);
+                if (businessServiceSLA == null)
+                    return null;
 
                 return Long.valueOf(Math.round((businessServiceSLA - (currentDate - createdTime)) / ((double) (24 * 60 * 60 * 1000))));
             }
@@ -292,6 +294,8 @@ public class InboxServiceV2 {
         for(int i = 0; i < businessServices.size(); i++){
             String businessService = businessServices.get(i);
             Long businessServiceSla = businessServiceSlaMap.get(businessService);
+            if (businessServiceSla == null)
+                continue;    // a process without an SLA has nothing nearing it
             inboxRequest.getInbox().getProcessSearchCriteria().setStatus(businessServiceVsUuidsBasedOnSearchCriteria.get(businessService));
             // Nearing SLA = last modified within the first 60% of the business service's SLA, counted back from now.
             long now = System.currentTimeMillis();

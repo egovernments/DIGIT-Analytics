@@ -25,6 +25,8 @@ import org.egov.inbox.web.model.workflow.ProcessInstanceResponse;
 import org.egov.inbox.web.model.workflow.ProcessInstanceSearchCriteria;
 import org.egov.tracer.model.CustomException;
 import org.egov.inbox.web.model.workflow.*;
+import org.egov.inbox.platform.ProcessDefinitionsClient;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -43,12 +45,16 @@ public class WorkflowService {
 
 	private ObjectMapper mapper;
 
+	/** Present on DIGIT 3.0 only: business services then come from workflow v3 process definitions. */
+	private ProcessDefinitionsClient processDefinitions;
+
 	@Autowired
 	public WorkflowService(InboxConfiguration config, ServiceRequestRepository serviceRequestRepository,
-			ObjectMapper mapper) {
+			ObjectMapper mapper, ObjectProvider<ProcessDefinitionsClient> processDefinitions) {
 		this.config = config;
 		this.serviceRequestRepository = serviceRequestRepository;
 		this.mapper = mapper;
+		this.processDefinitions = processDefinitions.getIfAvailable();
 	}
 
 	public Integer getProcessCount(String tenantId, RequestInfo requestInfo, ProcessInstanceSearchCriteria criteria) {
@@ -187,6 +193,9 @@ public class WorkflowService {
 
 	@Cacheable(value="businessServices")
 	public List<BusinessService> getBusinessServices(InboxRequest request) {
+		if (processDefinitions != null)
+			return processDefinitions.businessServices(request.getInbox().getTenantId(),
+					request.getInbox().getProcessSearchCriteria().getBusinessService());
 		String tenantId = request.getInbox().getTenantId();
 		RequestInfo requestInfo = request.getRequestInfo() ;
 		List<String> businessServicesCodes = request.getInbox().getProcessSearchCriteria().getBusinessService();
