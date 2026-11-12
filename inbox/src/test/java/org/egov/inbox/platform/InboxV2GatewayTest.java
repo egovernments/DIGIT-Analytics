@@ -97,7 +97,7 @@ class InboxV2GatewayTest {
             s.execute("INSERT INTO \"STUDIO\".application VALUES"
                     + " ('APP-1','Demo','show','ACTIVE','PENDING_APPROVAL','{\"k\":1}','{\"businessService\":\"Demo.show\",\"assignees\":[\"u-emp\"]}',"
                     + now + " - interval '6 days', " + now + " - interval '2 days 1 hour'),"
-                    + " ('APP-2','Demo','show','ACTIVE','PENDING_VERIFICATION',null,'{\"businessService\":\"Demo.show\"}',"
+                    + " ('APP-2','Demo','show','ACTIVE','PENDING_VERIFICATION',null,'{\"businessService\":\"Demo.show\",\"assignees\":null}',"
                     + now + " - interval '4 days 1 hour', " + now + " - interval '1 day'),"
                     + " ('APP-3','Demo','show','ACTIVE','APPROVED',null,'{\"businessService\":\"Demo.show\"}',"
                     + now + " - interval '3 days', " + now + " - interval '3 days')");
