@@ -1,0 +1,65 @@
+{
+  "ResponseInfo": null,
+  "BusinessServices": [
+    {
+      "tenantId": "dev",
+      "uuid": "bs-demo-show",
+      "businessService": "Demo.show",
+      "business": "public-services",
+      "businessServiceSla": 864000000,
+      "states": [
+        {
+          "uuid": "wf-state-start",
+          "tenantId": "dev",
+          "businessServiceId": "bs-demo-show",
+          "sla": null,
+          "state": null,
+          "applicationStatus": null,
+          "isStartState": true,
+          "isTerminateState": false,
+          "actions": [
+            { "uuid": "a-apply", "tenantId": "dev", "currentState": "wf-state-start", "action": "APPLY", "nextState": "wf-state-pending", "roles": ["STUDIO_CITIZEN"], "active": true }
+          ]
+        },
+        {
+          "uuid": "wf-state-pending",
+          "tenantId": "dev",
+          "businessServiceId": "bs-demo-show",
+          "sla": 432000000,
+          "state": "PENDING_APPROVAL",
+          "applicationStatus": "PENDINGAPPROVAL",
+          "isStartState": false,
+          "isTerminateState": false,
+          "actions": [
+            { "uuid": "a-approve", "tenantId": "dev", "currentState": "wf-state-pending", "action": "APPROVE", "nextState": "wf-state-approved", "roles": ["DEMO_SHOW_APPROVER"], "active": true },
+            { "uuid": "a-verify", "tenantId": "dev", "currentState": "wf-state-pending", "action": "SENDFORVERIFICATION", "nextState": "wf-state-verify", "roles": ["DEMO_SHOW_APPROVER"], "active": true }
+          ]
+        },
+        {
+          "uuid": "wf-state-verify",
+          "tenantId": "dev",
+          "businessServiceId": "bs-demo-show",
+          "sla": null,
+          "state": "PENDING_VERIFICATION",
+          "applicationStatus": "PENDINGVERIFICATION",
+          "isStartState": false,
+          "isTerminateState": false,
+          "actions": [
+            { "uuid": "a-verified", "tenantId": "dev", "currentState": "wf-state-verify", "action": "VERIFY", "nextState": "wf-state-pending", "roles": ["DEMO_SHOW_VERIFIER", "DEMO_SHOW_APPROVER"], "active": true }
+          ]
+        },
+        {
+          "uuid": "wf-state-approved",
+          "tenantId": "dev",
+          "businessServiceId": "bs-demo-show",
+          "sla": null,
+          "state": "APPROVED",
+          "applicationStatus": "APPROVED",
+          "isStartState": false,
+          "isTerminateState": true,
+          "actions": []
+        }
+      ]
+    }
+  ]
+}

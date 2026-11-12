@@ -1,0 +1,41 @@
+{
+  "description": "Citizen role acts only on the start state",
+  "endpoint": "/v2/_search",
+  "request": {
+    "RequestInfo": {
+      "apiId": "Rainmaker",
+      "authToken": "test-token",
+      "userInfo": {
+        "id": 11,
+        "uuid": "u-employee",
+        "userName": "EMP1",
+        "type": "EMPLOYEE",
+        "tenantId": "dev",
+        "roles": [
+          {
+            "code": "STUDIO_CITIZEN",
+            "name": "STUDIO_CITIZEN",
+            "tenantId": "dev"
+          }
+        ]
+      }
+    },
+    "inbox": {
+      "limit": 10,
+      "offset": 0,
+      "tenantId": "dev",
+      "processSearchCriteria": {
+        "businessService": [
+          "Demo.show"
+        ],
+        "moduleName": "public-services",
+        "tenantId": "dev"
+      },
+      "moduleSearchCriteria": {
+        "businessService": "show",
+        "module": "Demo",
+        "sortOrder": "ASC"
+      }
+    }
+  }
+}

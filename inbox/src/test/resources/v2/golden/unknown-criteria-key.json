@@ -1,0 +1,17 @@
+{
+  "description" : "A key the config does not allow",
+  "elasticsearchCalls" : [ ],
+  "otherCalls" : [ "POST http://mdms.test/egov-mdms-service/v1/_search {\"MdmsCriteria\":{\"moduleDetails\":[{\"masterDetails\":[{\"filter\":null,\"name\":\"InboxQueryConfiguration\"}],\"moduleName\":\"INBOX\"}],\"tenantId\":\"dev\"}}" ],
+  "response" : {
+    "Errors" : [ {
+      "code" : "An unhandled exception occurred on the server",
+      "description" : null,
+      "id" : "NullPointerException",
+      "message" : "Cannot invoke \"java.lang.Boolean.booleanValue()\" because the return value of \"java.util.Map.get(Object)\" is null",
+      "params" : null,
+      "parentId" : null
+    } ],
+    "ResponseInfo" : null
+  },
+  "status" : 400
+}

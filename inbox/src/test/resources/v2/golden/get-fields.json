@@ -1,0 +1,150 @@
+{
+  "description" : "_getFields: plain index search returning flattened fields",
+  "elasticsearchCalls" : [ {
+    "body" : {
+      "_source" : [ "Data.businessService", "Data.applicationNumber", "Data.currentProcessInstance", "Data.auditDetails", "Data.module", "Data.locality", "Data.status", "Data.serviceCode" ],
+      "from" : 0,
+      "query" : {
+        "bool" : {
+          "must" : [ {
+            "term" : {
+              "Data.applicationNumber.keyword" : "APP-1"
+            }
+          }, {
+            "term" : {
+              "Data.businessService.keyword" : "show"
+            }
+          }, {
+            "term" : {
+              "Data.module.keyword" : "Demo"
+            }
+          } ]
+        }
+      },
+      "size" : 2,
+      "sort" : [ {
+        "Data.auditDetails.createdTime" : {
+          "order" : "DESC"
+        }
+      } ]
+    },
+    "url" : "http://es.test/public-service-index/_search"
+  } ],
+  "otherCalls" : [ "POST http://mdms.test/egov-mdms-service/v1/_search {\"MdmsCriteria\":{\"moduleDetails\":[{\"masterDetails\":[{\"filter\":null,\"name\":\"InboxQueryConfiguration\"}],\"moduleName\":\"INBOX\"}],\"tenantId\":\"dev\"}}" ],
+  "response" : {
+    "data" : [ {
+      "fields" : [ {
+        "key" : "applicationNumber",
+        "value" : "APP-1"
+      }, {
+        "key" : "businessService",
+        "value" : "show"
+      }, {
+        "key" : "module",
+        "value" : "Demo"
+      }, {
+        "key" : "status",
+        "value" : "ACTIVE"
+      }, {
+        "key" : "serviceCode",
+        "value" : "SVC-DEMO-SHOW"
+      }, {
+        "key" : "auditDetails.createdBy",
+        "value" : "u-citizen"
+      }, {
+        "key" : "auditDetails.createdTime",
+        "value" : "@now-6d0h"
+      }, {
+        "key" : "auditDetails.lastModifiedBy",
+        "value" : "u-employee"
+      }, {
+        "key" : "auditDetails.lastModifiedTime",
+        "value" : "@now-2d1h"
+      }, {
+        "key" : "currentProcessInstance.id",
+        "value" : "pi-1"
+      }, {
+        "key" : "currentProcessInstance.tenantId",
+        "value" : "dev"
+      }, {
+        "key" : "currentProcessInstance.businessService",
+        "value" : "Demo.show"
+      }, {
+        "key" : "currentProcessInstance.businessId",
+        "value" : "APP-1"
+      }, {
+        "key" : "currentProcessInstance.action",
+        "value" : "APPLY"
+      }, {
+        "key" : "currentProcessInstance.state.uuid",
+        "value" : "wf-state-pending"
+      }, {
+        "key" : "currentProcessInstance.state.state",
+        "value" : "PENDING_APPROVAL"
+      }, {
+        "key" : "currentProcessInstance.state.applicationStatus",
+        "value" : "PENDINGAPPROVAL"
+      }, {
+        "key" : "currentProcessInstance.assignes[0].uuid",
+        "value" : "u-employee"
+      } ]
+    }, {
+      "fields" : [ {
+        "key" : "applicationNumber",
+        "value" : "APP-2"
+      }, {
+        "key" : "businessService",
+        "value" : "show"
+      }, {
+        "key" : "module",
+        "value" : "Demo"
+      }, {
+        "key" : "status",
+        "value" : "ACTIVE"
+      }, {
+        "key" : "serviceCode",
+        "value" : "SVC-DEMO-SHOW"
+      }, {
+        "key" : "auditDetails.createdBy",
+        "value" : "u-citizen"
+      }, {
+        "key" : "auditDetails.createdTime",
+        "value" : "@now-4d1h"
+      }, {
+        "key" : "auditDetails.lastModifiedBy",
+        "value" : "u-employee"
+      }, {
+        "key" : "auditDetails.lastModifiedTime",
+        "value" : "@now-1d0h"
+      }, {
+        "key" : "currentProcessInstance.id",
+        "value" : "pi-2"
+      }, {
+        "key" : "currentProcessInstance.tenantId",
+        "value" : "dev"
+      }, {
+        "key" : "currentProcessInstance.businessService",
+        "value" : "Demo.show"
+      }, {
+        "key" : "currentProcessInstance.businessId",
+        "value" : "APP-2"
+      }, {
+        "key" : "currentProcessInstance.action",
+        "value" : "SENDFORVERIFICATION"
+      }, {
+        "key" : "currentProcessInstance.state.uuid",
+        "value" : "wf-state-verify"
+      }, {
+        "key" : "currentProcessInstance.state.state",
+        "value" : "PENDING_VERIFICATION"
+      }, {
+        "key" : "currentProcessInstance.state.applicationStatus",
+        "value" : "PENDINGVERIFICATION"
+      }, {
+        "key" : "currentProcessInstance.assignes",
+        "value" : null
+      } ]
+    } ]
+  },
+  "status" : 200
+}

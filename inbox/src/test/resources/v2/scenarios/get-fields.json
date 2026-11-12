@@ -1,0 +1,40 @@
+{
+  "description": "_getFields: plain index search returning flattened fields",
+  "endpoint": "/v2/_getFields",
+  "request": {
+    "RequestInfo": {
+      "apiId": "Rainmaker",
+      "authToken": "test-token",
+      "userInfo": {
+        "id": 11,
+        "uuid": "u-employee",
+        "userName": "EMP1",
+        "type": "EMPLOYEE",
+        "tenantId": "dev",
+        "roles": [
+          {
+            "code": "DEMO_SHOW_APPROVER",
+            "name": "DEMO_SHOW_APPROVER",
+            "tenantId": "dev"
+          },
+          {
+            "code": "STUDIO_EMPLOYEE",
+            "name": "STUDIO_EMPLOYEE",
+            "tenantId": "dev"
+          }
+        ]
+      }
+    },
+    "SearchCriteria": {
+      "tenantId": "dev",
+      "moduleName": "public-services",
+      "limit": 2,
+      "offset": 0,
+      "moduleSearchCriteria": {
+        "module": "Demo",
+        "businessService": "show",
+        "applicationNumber": "APP-1"
+      }
+    }
+  }
+}
