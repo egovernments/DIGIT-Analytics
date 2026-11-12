@@ -265,7 +265,7 @@ public class InboxQueryBuilder implements QueryBuilderInterface {
 			Map<String, SearchParam.Operator> nameToOperatorMap) {
 
 		SearchParam.Operator operator = nameToOperatorMap.get(key);
-		if (operator == null || operator.equals(SearchParam.Operator.EQUAL)) {
+		if (operator == null || operator.equals(SearchParam.Operator.EQUAL) || operator.equals(SearchParam.Operator.CONTAINS)) {
 			// Add terms clause in case the search criteria has a list of values
 			if (params.get(key) instanceof List) {
 				Map<String, Object> termsClause = new HashMap<>();

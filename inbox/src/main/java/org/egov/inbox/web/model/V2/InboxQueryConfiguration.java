@@ -15,6 +15,7 @@ public class InboxQueryConfiguration {
     public static final String DEFAULT_STORE = "ELASTICSEARCH";
     public static final String DEFAULT_STATE_PATH = "Data.currentProcessInstance.state.uuid.keyword";
     public static final String DEFAULT_LAST_MODIFIED_PATH = "Data.auditDetails.lastModifiedTime";
+    public static final String DEFAULT_DOCUMENT_PATH = "data";
 
     @JsonProperty("module")
     private String module;
@@ -35,6 +36,17 @@ public class InboxQueryConfiguration {
     @JsonProperty("lastModifiedPath")
     private String lastModifiedPath;
 
+    /** Postgres store: the jsonb column holding the document returned as the business object. */
+    @JsonProperty("documentPath")
+    private String documentPath;
+
+    /**
+     * Postgres store: columns of type timestamp (without time zone, holding UTC). Epoch-millis values
+     * compared with them are converted in SQL, so the column's own index is used.
+     */
+    @JsonProperty("timestampColumns")
+    private List<String> timestampColumns;
+
     @JsonProperty("allowedSearchCriteria")
     private List<SearchParam> allowedSearchCriteria;
 
@@ -50,6 +62,10 @@ public class InboxQueryConfiguration {
 
     public String getStatePath() {
         return statePath == null || statePath.isBlank() ? DEFAULT_STATE_PATH : statePath;
+    }
+
+    public String getDocumentPath() {
+        return documentPath == null || documentPath.isBlank() ? DEFAULT_DOCUMENT_PATH : documentPath;
     }
 
     public String getLastModifiedPath() {
