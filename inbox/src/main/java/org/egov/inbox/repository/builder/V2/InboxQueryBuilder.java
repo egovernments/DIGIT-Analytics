@@ -14,12 +14,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.egov.inbox.store.InboxQuery;
 import org.egov.inbox.util.ErrorConstants;
-import org.egov.inbox.util.MDMSUtil;
-import org.egov.inbox.web.model.InboxRequest;
 import org.egov.inbox.web.model.V2.InboxQueryConfiguration;
 import org.egov.inbox.web.model.V2.SearchParam;
-import org.egov.inbox.web.model.V2.SearchRequest;
 import org.egov.inbox.web.model.V2.SortParam;
 import org.egov.inbox.web.model.workflow.ProcessInstanceSearchCriteria;
 import org.egov.tracer.model.CustomException;
@@ -42,22 +40,23 @@ public class InboxQueryBuilder implements QueryBuilderInterface {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private MDMSUtil mdmsUtil;
 
 
+    /**
+     * The bool query for the query's criteria: module criteria, then process criteria when present.
+     * With pagination it also gets from/size, the sort clause and the source filter.
+     */
     @Override
-    public Map<String, Object> getESQuery(InboxRequest inboxRequest, Boolean isPaginationRequired) {
+    public Map<String, Object> getESQuery(InboxQuery query, Boolean isPaginationRequired) {
 
-        InboxQueryConfiguration configuration = mdmsUtil.getConfigFromMDMS(inboxRequest.getInbox().getTenantId(), inboxRequest.getInbox().getProcessSearchCriteria().getModuleName());
-        Map<String, Object> params = inboxRequest.getInbox().getModuleSearchCriteria();
-        Map<String, Object> baseEsQuery = getBaseESQueryBody(inboxRequest, isPaginationRequired);
+        InboxQueryConfiguration configuration = query.config();
+        Map<String, Object> params = query.moduleCriteria();
+        Map<String, Object> baseEsQuery = getBaseESQueryBody(query, isPaginationRequired);
 
         if(isPaginationRequired) {
             // Adds sort clause to the inbox ES query only in case pagination is present, else not
             String sortClauseFieldPath = configuration.getSortParam().getPath();
-            SortParam.Order sortOrder = inboxRequest.getInbox().getModuleSearchCriteria().containsKey(SORT_ORDER_CONSTANT) ? SortParam.Order.valueOf((String) inboxRequest.getInbox().getModuleSearchCriteria().get(SORT_ORDER_CONSTANT)) : configuration.getSortParam().getOrder();
-            addSortClauseToBaseQuery(baseEsQuery, sortClauseFieldPath, sortOrder);
+            addSortClauseToBaseQuery(baseEsQuery, sortClauseFieldPath, query.sortOrder());
 
             // Adds source filter only when requesting for inbox items.
             List<String> sourceFilterPathList = configuration.getSourceFilterPathList();
@@ -76,42 +75,8 @@ public class InboxQueryBuilder implements QueryBuilderInterface {
         });
 
         addModuleSearchCriteriaToBaseQuery(params, nameToPathMap, nameToOperator, mustClauseList);
-        addProcessSearchCriteriaToBaseQuery(inboxRequest.getInbox().getProcessSearchCriteria(), nameToPathMap, nameToOperator, mustClauseList);
-
-        innerBoolClause.put(MUST_KEY, mustClauseList);
-
-        return baseEsQuery;
-    }
-
-    public Map<String, Object> getESQueryForSimpleSearch(SearchRequest searchRequest, Boolean isPaginationRequired) {
-
-        InboxQueryConfiguration configuration = mdmsUtil.getConfigFromMDMS(searchRequest.getIndexSearchCriteria().getTenantId(), searchRequest.getIndexSearchCriteria().getModuleName());
-        Map<String, Object> params = searchRequest.getIndexSearchCriteria().getModuleSearchCriteria();
-        Map<String, Object> baseEsQuery = getBaseESQueryBody(searchRequest, isPaginationRequired);
-
-        if(isPaginationRequired) {
-            // Adds sort clause to the inbox ES query only in case pagination is present, else not
-            String sortClauseFieldPath = configuration.getSortParam().getPath();
-            SortParam.Order sortOrder = searchRequest.getIndexSearchCriteria().getModuleSearchCriteria().containsKey(SORT_ORDER_CONSTANT) ? SortParam.Order.valueOf((String) searchRequest.getIndexSearchCriteria().getModuleSearchCriteria().get(SORT_ORDER_CONSTANT)) : configuration.getSortParam().getOrder();
-            addSortClauseToBaseQuery(baseEsQuery, sortClauseFieldPath, sortOrder);
-
-            // Adds source filter only when requesting for inbox items.
-            List<String> sourceFilterPathList = configuration.getSourceFilterPathList();
-            addSourceFilterToBaseQuery(baseEsQuery, sourceFilterPathList);
-        }
-
-        Map<String, Object> innerBoolClause = (HashMap<String, Object>) ((HashMap<String, Object>) baseEsQuery.get(QUERY_KEY)).get(BOOL_KEY);
-        List<Object> mustClauseList = (ArrayList<Object>) innerBoolClause.get(MUST_KEY);
-
-        Map<String, String> nameToPathMap = new HashMap<>();
-        Map<String, SearchParam.Operator> nameToOperator = new HashMap<>();
-
-        configuration.getAllowedSearchCriteria().forEach(searchParam -> {
-            nameToPathMap.put(searchParam.getName(), searchParam.getPath());
-            nameToOperator.put(searchParam.getName(), searchParam.getOperator());
-        });
-
-        addModuleSearchCriteriaToBaseQuery(params, nameToPathMap, nameToOperator, mustClauseList);
+        if (query.processCriteria() != null)
+            addProcessSearchCriteriaToBaseQuery(query.processCriteria(), nameToPathMap, nameToOperator, mustClauseList);
 
         innerBoolClause.put(MUST_KEY, mustClauseList);
 
@@ -237,68 +202,46 @@ public class InboxQueryBuilder implements QueryBuilderInterface {
 		});
 	}
 
+
+    /** The query's criteria plus a terms aggregation on the configured state field. */
     @Override
-    public Map<String, Object> getStatusCountQuery(InboxRequest inboxRequest) {
-        Map<String, Object> baseEsQuery = getBaseESQueryBody(inboxRequest, Boolean.FALSE);
-        appendStatusCountAggsNode(baseEsQuery);
+    public Map<String, Object> getStatusCountQuery(InboxQuery query) {
+        Map<String, Object> baseEsQuery = getESQuery(query, Boolean.FALSE);
+        appendStatusCountAggsNode(baseEsQuery, query.config().getStatePath());
         return baseEsQuery;
     }
 
+    /** The query's criteria plus a range on the configured last-modified field. */
     @Override
-    public Map<String, Object> getNearingSlaCountQuery(InboxRequest inboxRequest, Long businessServiceSla) {
-        Map<String, Object> baseEsQuery = getESQuery(inboxRequest, Boolean.FALSE);
-        Long currenTimeInMillis = System.currentTimeMillis();
-        Long lteParam = currenTimeInMillis;
-        Long slotLimit = businessServiceSla - 40 * (businessServiceSla/100);
-        Long gteParam = currenTimeInMillis - slotLimit;
-
-        appendNearingSlaCountClause(baseEsQuery, gteParam, lteParam);
+    public Map<String, Object> getNearingSlaCountQuery(InboxQuery query, long from, long to) {
+        Map<String, Object> baseEsQuery = getESQuery(query, Boolean.FALSE);
+        appendNearingSlaCountClause(baseEsQuery, query.config().getLastModifiedPath(), from, to);
         return baseEsQuery;
     }
 
-    private void appendNearingSlaCountClause(Map<String, Object> baseEsQuery, Long gteParam, Long lteParam) {
+    private void appendNearingSlaCountClause(Map<String, Object> baseEsQuery, String lastModifiedPath, Long gteParam, Long lteParam) {
         List mustClause = JsonPath.read(baseEsQuery, "$.query.bool.must");
         Map<String, Object> rangeObject = new HashMap<>();
         Map<String, Object> rangeClause = new HashMap<>();
         rangeClause.put("gte", gteParam);
         rangeClause.put("lte", lteParam);
-        rangeObject.put("Data.auditDetails.lastModifiedTime", rangeClause);
+        rangeObject.put(lastModifiedPath, rangeClause);
         HashMap<String, Object> rangeMap = new HashMap<>();
         rangeMap.put("range", rangeObject);
         mustClause.add(rangeMap);
     }
 
-    private void appendStatusCountAggsNode(Map<String, Object> baseEsQuery) {
+    private void appendStatusCountAggsNode(Map<String, Object> baseEsQuery, String statePath) {
         Map<String, Object> aggsNode = new HashMap<>();
         aggsNode.put("statusCount", new HashMap<>());
         Map<String, Object> statusCountNode = (Map<String, Object>) aggsNode.get("statusCount");
         statusCountNode.put("terms", new HashMap<>());
         Map<String, Object> innerTermsQuery = (Map<String, Object>) statusCountNode.get("terms");
-        innerTermsQuery.put("field", "Data.currentProcessInstance.state.uuid.keyword");
+        innerTermsQuery.put("field", statePath);
         baseEsQuery.put("aggs", aggsNode);
     }
 
-    private Map<String, Object> getBaseESQueryBody(InboxRequest inboxRequest, Boolean isPaginationRequired){
-        Map<String, Object> baseEsQuery = new HashMap<>();
-        Map<String, Object> boolQuery = new HashMap<>();
-        Map<String, Object> mustClause = new HashMap<>();
-
-        // Prepare bool query
-        boolQuery.put("bool", new HashMap<>());
-        Map<String, Object> innerBoolBody = (Map<String, Object>) boolQuery.get("bool");
-        innerBoolBody.put("must", new ArrayList<>());
-
-        // Prepare base ES query
-        if(isPaginationRequired) {
-            baseEsQuery.put("from", inboxRequest.getInbox().getOffset());
-            baseEsQuery.put("size", inboxRequest.getInbox().getLimit());
-        }
-        baseEsQuery.put("query", boolQuery);
-
-        return baseEsQuery;
-    }
-
-    private Map<String, Object> getBaseESQueryBody(SearchRequest searchRequest, Boolean isPaginationRequired){
+    private Map<String, Object> getBaseESQueryBody(InboxQuery query, Boolean isPaginationRequired){
         Map<String, Object> baseEsQuery = new HashMap<>();
         Map<String, Object> boolQuery = new HashMap<>();
 
@@ -309,13 +252,14 @@ public class InboxQueryBuilder implements QueryBuilderInterface {
 
         // Prepare base ES query
         if(isPaginationRequired) {
-            baseEsQuery.put("from", searchRequest.getIndexSearchCriteria().getOffset());
-            baseEsQuery.put("size", searchRequest.getIndexSearchCriteria().getLimit());
+            baseEsQuery.put("from", query.offset());
+            baseEsQuery.put("size", query.limit());
         }
         baseEsQuery.put("query", boolQuery);
 
         return baseEsQuery;
     }
+
 
 	private Object prepareMustClauseChild(Map<String, Object> params, String key, Map<String, String> nameToPathMap,
 			Map<String, SearchParam.Operator> nameToOperatorMap) {

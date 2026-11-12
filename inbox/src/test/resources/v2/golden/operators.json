@@ -109,7 +109,43 @@
       },
       "query" : {
         "bool" : {
-          "must" : [ ]
+          "must" : [ {
+            "range" : {
+              "Data.auditDetails.createdTime" : {
+                "gte" : 1700000000000
+              }
+            }
+          }, {
+            "range" : {
+              "Data.auditDetails.createdTime" : {
+                "lte" : 1800000000000
+              }
+            }
+          }, {
+            "term" : {
+              "Data.tenantId.keyword" : "dev"
+            }
+          }, {
+            "term" : {
+              "Data.tenantId.keyword" : "dev"
+            }
+          }, {
+            "terms" : {
+              "Data.currentProcessInstance.state.uuid.keyword" : [ "wf-state-pending", "wf-state-verify" ]
+            }
+          }, {
+            "terms" : {
+              "Data.mobileNumber.keyword" : [ "9999999999", "8888888888" ]
+            }
+          }, {
+            "wildcard" : {
+              "Data.applicantName.keyword" : "*ram*"
+            }
+          }, {
+            "wildcard" : {
+              "Data.applicantName.keyword" : "*sita*"
+            }
+          } ]
         }
       }
     },

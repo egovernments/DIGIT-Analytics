@@ -77,7 +77,27 @@
       },
       "query" : {
         "bool" : {
-          "must" : [ ]
+          "must" : [ {
+            "term" : {
+              "Data.businessService.keyword" : "show"
+            }
+          }, {
+            "term" : {
+              "Data.module.keyword" : "Demo"
+            }
+          }, {
+            "term" : {
+              "Data.tenantId.keyword" : "dev"
+            }
+          }, {
+            "terms" : {
+              "Data.currentProcessInstance.state.uuid.keyword" : [ "wf-state-pending", "wf-state-approved" ]
+            }
+          }, {
+            "terms" : {
+              "Data.currentProcessInstance.state.uuid.keyword" : [ "wf-state-pending", "wf-state-verify" ]
+            }
+          } ]
         }
       }
     },
