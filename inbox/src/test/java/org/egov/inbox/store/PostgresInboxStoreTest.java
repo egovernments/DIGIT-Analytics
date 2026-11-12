@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * The Postgres store against a real database: two tenant schemas with the same relation, read through
  * a user that may only select. Rows hold their tenant in the document, so a leak shows.
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class PostgresInboxStoreTest {
 
     @Container

@@ -59,7 +59,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
         "inbox.postgres-store.schema-per-tenant=true"})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class InboxV2GatewayTest {
 
     @Container
