@@ -11,6 +11,8 @@ import org.egov.mdms.model.MdmsCriteria;
 import org.egov.mdms.model.MdmsCriteriaReq;
 import org.egov.mdms.model.ModuleDetail;
 import org.egov.tracer.model.CustomException;
+import org.egov.inbox.platform.MdmsRecordsClient;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -43,8 +45,15 @@ public class MDMSUtil {
     @Autowired
     private ObjectMapper objectMapper;
 
+    /** Present on DIGIT 3.0 only: the configuration then comes from MDMS v2 records. */
+    @Autowired
+    private ObjectProvider<MdmsRecordsClient> mdmsRecords;
+
     @Cacheable(value="inboxConfiguration")
     public InboxQueryConfiguration getConfigFromMDMS(String tenantId, String moduleName) {
+        MdmsRecordsClient records = mdmsRecords.getIfAvailable();
+        if (records != null)
+            return records.inboxConfiguration(tenantId, moduleName);
 
         StringBuilder uri = new StringBuilder();
         uri.append(mdmsHost).append(mdmsUrl);

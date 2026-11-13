@@ -2,6 +2,7 @@ package org.egov.inbox.web.controller;
 
 import org.egov.common.utils.MultiStateInstanceUtil;
 import org.egov.inbox.repository.builder.V2.InboxQueryBuilder;
+import org.egov.inbox.platform.CallerResolver;
 import org.egov.inbox.service.V2.InboxServiceV2;
 import org.egov.inbox.util.ResponseInfoFactory;
 import org.egov.inbox.web.model.InboxRequest;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,16 +39,21 @@ public class InboxV2Controller {
     @Autowired
     private InboxServiceV2 inboxService;
 
+    @Autowired
+    private CallerResolver callerResolver;
+
 
     @PostMapping(value = "/_search")
-    public ResponseEntity<InboxResponse> searchNewInbox(@Valid @RequestBody  InboxRequest inboxRequest) {
+    public ResponseEntity<InboxResponse> searchNewInbox(@Valid @RequestBody  InboxRequest inboxRequest, HttpServletRequest http) {
+        callerResolver.resolve(inboxRequest, http);
         InboxResponse inboxResponse = inboxService.getInboxResponse(inboxRequest);
         return new ResponseEntity<>(inboxResponse, HttpStatus.OK);
     }
 
 
     @PostMapping(value = "/_getFields")
-    public ResponseEntity<SearchResponse> searchFields(@Valid @RequestBody SearchRequest searchRequest) {
+    public ResponseEntity<SearchResponse> searchFields(@Valid @RequestBody SearchRequest searchRequest, HttpServletRequest http) {
+        callerResolver.resolve(searchRequest, http);
         SearchResponse searchResponse = inboxService.getSpecificFieldsFromESIndex(searchRequest);
         return new ResponseEntity<>(searchResponse, HttpStatus.OK);
     }

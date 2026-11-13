@@ -36,7 +36,10 @@ public class SearchParam {
 
         LTE("LTE"), 
         
-        WILDCARD("WILDCARD");
+        WILDCARD("WILDCARD"),
+
+        /** The field is a list that holds the value (in Elasticsearch the same as EQUAL). */
+        CONTAINS("CONTAINS");
 
 
         private String value;

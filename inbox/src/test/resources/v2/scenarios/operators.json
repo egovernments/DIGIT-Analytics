@@ -1,0 +1,55 @@
+{
+  "description": "WILDCARD (list), GTE, LTE, EQUAL with a list, explicit DESC, on a made-up config",
+  "endpoint": "/v2/_search",
+  "request": {
+    "RequestInfo": {
+      "apiId": "Rainmaker",
+      "authToken": "test-token",
+      "userInfo": {
+        "id": 11,
+        "uuid": "u-employee",
+        "userName": "EMP1",
+        "type": "EMPLOYEE",
+        "tenantId": "dev",
+        "roles": [
+          {
+            "code": "DEMO_SHOW_APPROVER",
+            "name": "DEMO_SHOW_APPROVER",
+            "tenantId": "dev"
+          },
+          {
+            "code": "STUDIO_EMPLOYEE",
+            "name": "STUDIO_EMPLOYEE",
+            "tenantId": "dev"
+          }
+        ]
+      }
+    },
+    "inbox": {
+      "limit": 10,
+      "offset": 0,
+      "tenantId": "dev",
+      "processSearchCriteria": {
+        "businessService": [
+          "Demo.show"
+        ],
+        "moduleName": "operators-test",
+        "tenantId": "dev"
+      },
+      "moduleSearchCriteria": {
+        "tenantId": "dev",
+        "applicantName": [
+          "ram",
+          "sita"
+        ],
+        "fromDate": 1700000000000,
+        "toDate": 1800000000000,
+        "mobileNumber": [
+          "9999999999",
+          "8888888888"
+        ],
+        "sortOrder": "DESC"
+      }
+    }
+  }
+}

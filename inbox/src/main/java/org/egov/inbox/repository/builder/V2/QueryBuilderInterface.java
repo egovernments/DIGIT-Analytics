@@ -1,39 +1,36 @@
 package org.egov.inbox.repository.builder.V2;
 
-
-import org.egov.inbox.web.model.InboxRequest;
-import org.egov.inbox.web.model.V2.InboxQueryConfiguration;
-
 import java.util.Map;
-import java.util.Optional;
+
+import org.egov.inbox.store.InboxQuery;
 
 public interface QueryBuilderInterface{
 
     /**
-     * This method will take the incoming request and create
-     * elasticsearch query based on input search criteria
-     * @param inboxRequest
+     * This method will take the inbox query and create
+     * elasticsearch query based on its search criteria
+     * @param query
      * @return
      */
-    public Map<String, Object> getESQuery(InboxRequest inboxRequest, Boolean isPaginationRequired);
+    public Map<String, Object> getESQuery(InboxQuery query, Boolean isPaginationRequired);
 
 
     /**
-     * This method will take the incoming request and create
-     * elasticsearch query based on input search criteria
+     * This method will take the inbox query and create
+     * elasticsearch query based on its search criteria
      * to get status count map
-     * @param inboxRequest
+     * @param query
      * @return
      */
-    public Map<String, Object> getStatusCountQuery(InboxRequest inboxRequest);
+    public Map<String, Object> getStatusCountQuery(InboxQuery query);
 
     /**
-     * This method will take the incoming request and create
-     * elasticsearch query based on input search criteria
-     * to get nearing sla count
-     * @param inboxRequest
+     * This method will take the inbox query and create
+     * elasticsearch query based on its search criteria
+     * to get the count of documents last modified between from and to
+     * @param query
      * @return
      */
-    public Map<String, Object> getNearingSlaCountQuery(InboxRequest inboxRequest, Long businessServiceSla);
+    public Map<String, Object> getNearingSlaCountQuery(InboxQuery query, long from, long to);
 
 }

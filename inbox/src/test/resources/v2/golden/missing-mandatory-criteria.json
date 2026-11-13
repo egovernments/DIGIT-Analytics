@@ -1,0 +1,17 @@
+{
+  "description" : "module is mandatory in the config and missing",
+  "elasticsearchCalls" : [ ],
+  "otherCalls" : [ "POST http://mdms.test/egov-mdms-service/v1/_search {\"MdmsCriteria\":{\"moduleDetails\":[{\"masterDetails\":[{\"filter\":null,\"name\":\"InboxQueryConfiguration\"}],\"moduleName\":\"INBOX\"}],\"tenantId\":\"dev\"}}" ],
+  "response" : {
+    "Errors" : [ {
+      "code" : "INVALID_SEARCH_CRITERIA",
+      "description" : null,
+      "id" : null,
+      "message" : "Mandatory fields are missing in the moduleSearchCriteria",
+      "params" : null,
+      "parentId" : null
+    } ],
+    "ResponseInfo" : null
+  },
+  "status" : 400
+}

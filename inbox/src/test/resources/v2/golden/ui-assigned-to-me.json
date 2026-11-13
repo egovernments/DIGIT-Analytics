@@ -1,0 +1,277 @@
+{
+  "description" : "UI 'assigned to me' filter",
+  "elasticsearchCalls" : [ {
+    "body" : {
+      "_source" : [ "Data.businessService", "Data.applicationNumber", "Data.currentProcessInstance", "Data.auditDetails", "Data.module", "Data.locality", "Data.status", "Data.serviceCode" ],
+      "from" : 0,
+      "query" : {
+        "bool" : {
+          "must" : [ {
+            "term" : {
+              "Data.businessService.keyword" : "show"
+            }
+          }, {
+            "term" : {
+              "Data.currentProcessInstance.assignes.uuid.keyword" : "u-employee"
+            }
+          }, {
+            "term" : {
+              "Data.module.keyword" : "Demo"
+            }
+          }, {
+            "term" : {
+              "Data.tenantId.keyword" : "dev"
+            }
+          }, {
+            "terms" : {
+              "Data.currentProcessInstance.state.uuid.keyword" : [ "wf-state-pending", "wf-state-verify" ]
+            }
+          } ]
+        }
+      },
+      "size" : 10,
+      "sort" : [ {
+        "Data.auditDetails.createdTime" : {
+          "order" : "ASC"
+        }
+      } ]
+    },
+    "url" : "http://es.test/public-service-index/_search"
+  }, {
+    "body" : {
+      "query" : {
+        "bool" : {
+          "must" : [ {
+            "term" : {
+              "Data.businessService.keyword" : "show"
+            }
+          }, {
+            "term" : {
+              "Data.currentProcessInstance.assignes.uuid.keyword" : "u-employee"
+            }
+          }, {
+            "term" : {
+              "Data.module.keyword" : "Demo"
+            }
+          }, {
+            "term" : {
+              "Data.tenantId.keyword" : "dev"
+            }
+          }, {
+            "terms" : {
+              "Data.currentProcessInstance.state.uuid.keyword" : [ "wf-state-pending", "wf-state-verify" ]
+            }
+          } ]
+        }
+      }
+    },
+    "url" : "http://es.test/public-service-index/_count"
+  }, {
+    "body" : {
+      "aggs" : {
+        "statusCount" : {
+          "terms" : {
+            "field" : "Data.currentProcessInstance.state.uuid.keyword"
+          }
+        }
+      },
+      "query" : {
+        "bool" : {
+          "must" : [ {
+            "term" : {
+              "Data.businessService.keyword" : "show"
+            }
+          }, {
+            "term" : {
+              "Data.currentProcessInstance.assignes.uuid.keyword" : "u-employee"
+            }
+          }, {
+            "term" : {
+              "Data.module.keyword" : "Demo"
+            }
+          }, {
+            "term" : {
+              "Data.tenantId.keyword" : "dev"
+            }
+          }, {
+            "terms" : {
+              "Data.currentProcessInstance.state.uuid.keyword" : [ "wf-state-pending", "wf-state-verify" ]
+            }
+          } ]
+        }
+      }
+    },
+    "url" : "http://es.test/public-service-index/_search"
+  }, {
+    "body" : {
+      "query" : {
+        "bool" : {
+          "must" : [ {
+            "range" : {
+              "Data.auditDetails.lastModifiedTime" : {
+                "gte" : "<now - 518400000 ms>",
+                "lte" : "<now>"
+              }
+            }
+          }, {
+            "term" : {
+              "Data.businessService.keyword" : "show"
+            }
+          }, {
+            "term" : {
+              "Data.currentProcessInstance.assignes.uuid.keyword" : "u-employee"
+            }
+          }, {
+            "term" : {
+              "Data.module.keyword" : "Demo"
+            }
+          }, {
+            "term" : {
+              "Data.tenantId.keyword" : "dev"
+            }
+          }, {
+            "terms" : {
+              "Data.currentProcessInstance.state.uuid.keyword" : [ "wf-state-pending", "wf-state-verify" ]
+            }
+          } ]
+        }
+      }
+    },
+    "url" : "http://es.test/public-service-index/_count"
+  } ],
+  "otherCalls" : [ "POST http://mdms.test/egov-mdms-service/v1/_search {\"MdmsCriteria\":{\"moduleDetails\":[{\"masterDetails\":[{\"filter\":null,\"name\":\"InboxQueryConfiguration\"}],\"moduleName\":\"INBOX\"}],\"tenantId\":\"dev\"}}", "POST http://workflow.test/egov-workflow-v2/egov-wf/businessservice/_search?businessServices=Demo.show&tenantId=dev {}" ],
+  "response" : {
+    "items" : [ {
+      "ProcessInstance" : {
+        "action" : "APPLY",
+        "assignee" : null,
+        "assigner" : null,
+        "assignes" : [ {
+          "emailId" : null,
+          "id" : null,
+          "mobileNumber" : null,
+          "name" : null,
+          "roles" : null,
+          "tenantId" : null,
+          "type" : null,
+          "userName" : null,
+          "uuid" : "u-employee"
+        } ],
+        "auditDetails" : null,
+        "businessId" : "APP-1",
+        "businessService" : "Demo.show",
+        "businesssServiceSla" : null,
+        "comment" : null,
+        "documents" : null,
+        "entity" : null,
+        "escalated" : false,
+        "id" : "pi-1",
+        "moduleName" : null,
+        "nextActions" : null,
+        "notificationAction" : null,
+        "previousStatus" : null,
+        "rating" : null,
+        "state" : {
+          "actions" : null,
+          "applicationStatus" : "PENDINGAPPROVAL",
+          "auditDetails" : null,
+          "businessServiceId" : null,
+          "docUploadRequired" : null,
+          "isStartState" : null,
+          "isStateUpdatable" : null,
+          "isTerminateState" : null,
+          "sla" : null,
+          "state" : "PENDING_APPROVAL",
+          "tenantId" : null,
+          "uuid" : "wf-state-pending"
+        },
+        "stateSla" : null,
+        "tenantId" : "dev"
+      },
+      "businessObject" : {
+        "applicationNumber" : "APP-1",
+        "auditDetails" : {
+          "createdBy" : "u-citizen",
+          "createdTime" : "@now-6d0h",
+          "lastModifiedBy" : "u-employee",
+          "lastModifiedTime" : "@now-2d1h"
+        },
+        "businessService" : "show",
+        "module" : "Demo",
+        "serviceCode" : "SVC-DEMO-SHOW",
+        "serviceSla" : 3,
+        "status" : "ACTIVE"
+      },
+      "serviceObject" : null
+    }, {
+      "ProcessInstance" : {
+        "action" : "SENDFORVERIFICATION",
+        "assignee" : null,
+        "assigner" : null,
+        "assignes" : null,
+        "auditDetails" : null,
+        "businessId" : "APP-2",
+        "businessService" : "Demo.show",
+        "businesssServiceSla" : null,
+        "comment" : null,
+        "documents" : null,
+        "entity" : null,
+        "escalated" : false,
+        "id" : "pi-2",
+        "moduleName" : null,
+        "nextActions" : null,
+        "notificationAction" : null,
+        "previousStatus" : null,
+        "rating" : null,
+        "state" : {
+          "actions" : null,
+          "applicationStatus" : "PENDINGVERIFICATION",
+          "auditDetails" : null,
+          "businessServiceId" : null,
+          "docUploadRequired" : null,
+          "isStartState" : null,
+          "isStateUpdatable" : null,
+          "isTerminateState" : null,
+          "sla" : null,
+          "state" : "PENDING_VERIFICATION",
+          "tenantId" : null,
+          "uuid" : "wf-state-verify"
+        },
+        "stateSla" : null,
+        "tenantId" : "dev"
+      },
+      "businessObject" : {
+        "applicationNumber" : "APP-2",
+        "auditDetails" : {
+          "createdBy" : "u-citizen",
+          "createdTime" : "@now-4d1h",
+          "lastModifiedBy" : "u-employee",
+          "lastModifiedTime" : "@now-1d0h"
+        },
+        "businessService" : "show",
+        "module" : "Demo",
+        "serviceCode" : "SVC-DEMO-SHOW",
+        "serviceSla" : 6,
+        "status" : "ACTIVE"
+      },
+      "serviceObject" : null
+    } ],
+    "nearingSlaCount" : 1,
+    "responseInfo" : null,
+    "statusMap" : [ {
+      "applicationstatus" : "PENDINGAPPROVAL",
+      "businessservice" : "Demo.show",
+      "count" : 1,
+      "state" : "PENDING_APPROVAL",
+      "statusid" : "wf-state-pending"
+    }, {
+      "applicationstatus" : "PENDINGVERIFICATION",
+      "businessservice" : "Demo.show",
+      "count" : 1,
+      "state" : "PENDING_VERIFICATION",
+      "statusid" : "wf-state-verify"
+    } ],
+    "totalCount" : 2
+  },
+  "status" : 200
+}
