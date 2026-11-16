@@ -18,6 +18,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -34,6 +36,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * its id ({@code uuid}) and name; {@code applicationStatus} is the state's
  * {@code additionalDetails.applicationStatus} when set, else the code.
  */
+@Slf4j
 @Component
 @ConditionalOnProperty(name = InboxPlatform.PROPERTY, havingValue = InboxPlatform.GATEWAY)
 public class ProcessDefinitionsClient {
@@ -74,6 +77,7 @@ public class ProcessDefinitionsClient {
             Object definitions = response == null ? null : response.get("definitions");
             return definitions instanceof List<?> list ? (List<Map<String, Object>>) list : List.of();
         } catch (RestClientException e) {
+            log.error("Workflow process definitions call failed: GET {} -> {}", uri, e.getMessage());
             throw new CustomException("EG_WF_ERROR", "Failed to fetch workflow process definitions for " + code);
         }
     }
@@ -83,19 +87,19 @@ public class ProcessDefinitionsClient {
             return null;
         }
         List<Map<String, Object>> oldestFirst = new ArrayList<>(definitions);
-        oldestFirst.sort(Comparator.comparingLong(d -> createdTime(map(d.get("process")))));
+        oldestFirst.sort(Comparator.comparingLong(d -> createdTime(unwrapped(d, "process"))));
 
         Map<String, State> states = new LinkedHashMap<>();
         Map<String, Set<String>> roles = new LinkedHashMap<>();
         Long processSla = null;
         for (Map<String, Object> definition : oldestFirst) {
-            Map<String, Object> process = map(definition.get("process"));
+            Map<String, Object> process = unwrapped(definition, "process");
             if (process.get("sla") instanceof Number sla) {
                 processSla = sla.longValue();
             }
             for (Object detail : list(definition.get("states"))) {
                 Map<String, Object> stateDetail = map(detail);
-                Map<String, Object> s = map(stateDetail.get("state"));
+                Map<String, Object> s = unwrapped(stateDetail, "state");
                 String stateCode = (String) s.get("code");
                 if (stateCode == null) {
                     continue;
@@ -140,6 +144,14 @@ public class ProcessDefinitionsClient {
 
     private static long createdTime(Map<String, Object> process) {
         return map(process.get("auditDetail")).get("createdTime") instanceof Number n ? n.longValue() : 0L;
+    }
+
+    /**
+     * Workflow v3 sends the process and each state unwrapped ({@code @JsonUnwrapped}): their fields sit
+     * beside {@code states} / {@code actions}. A nested object under {@code key} is still read if present.
+     */
+    private static Map<String, Object> unwrapped(Map<String, Object> container, String key) {
+        return container.get(key) instanceof Map<?, ?> nested ? (Map<String, Object>) nested : container;
     }
 
     private static Map<String, Object> map(Object value) {

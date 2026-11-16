@@ -4,32 +4,28 @@
   "size": 2,
   "definitions": [
     {
-      "process": {
-        "id": "proc-v2",
-        "name": "Demo.show",
-        "code": "Demo.show",
-        "version": "v2",
-        "sla": 864000000,
-        "isActive": true,
-        "auditDetail": {
-          "createdBy": "x",
-          "createdTime": 2000,
-          "modifiedBy": "x",
-          "modifiedTime": 2000
-        }
+      "id": "proc-v2",
+      "name": "Demo.show",
+      "code": "Demo.show",
+      "version": "v2",
+      "sla": 864000000,
+      "isActive": true,
+      "auditDetail": {
+        "createdBy": "x",
+        "createdTime": 2000,
+        "modifiedBy": "x",
+        "modifiedTime": 2000
       },
       "states": [
         {
-          "state": {
-            "id": "id-START",
-            "processId": "p",
-            "code": "START",
-            "name": "START",
-            "type": "INITIAL",
-            "sla": null,
-            "isInitial": true,
-            "additionalDetails": {}
-          },
+          "id": "id-START",
+          "processId": "p",
+          "code": "START",
+          "name": "START",
+          "type": "INITIAL",
+          "sla": null,
+          "isInitial": true,
+          "additionalDetails": {},
           "actions": [
             {
               "id": "a-APPLY",
@@ -44,17 +40,15 @@
           ]
         },
         {
-          "state": {
-            "id": "id-PENDING_APPROVAL",
-            "processId": "p",
-            "code": "PENDING_APPROVAL",
-            "name": "PENDING_APPROVAL",
-            "type": "INTERMEDIATE",
-            "sla": 432000000,
-            "isInitial": false,
-            "additionalDetails": {
-              "applicationStatus": "PENDINGAPPROVAL"
-            }
+          "id": "id-PENDING_APPROVAL",
+          "processId": "p",
+          "code": "PENDING_APPROVAL",
+          "name": "PENDING_APPROVAL",
+          "type": "INTERMEDIATE",
+          "sla": 432000000,
+          "isInitial": false,
+          "additionalDetails": {
+            "applicationStatus": "PENDINGAPPROVAL"
           },
           "actions": [
             {
@@ -80,17 +74,15 @@
           ]
         },
         {
-          "state": {
-            "id": "id-PENDING_VERIFICATION",
-            "processId": "p",
-            "code": "PENDING_VERIFICATION",
-            "name": "PENDING_VERIFICATION",
-            "type": "INTERMEDIATE",
-            "sla": null,
-            "isInitial": false,
-            "additionalDetails": {
-              "applicationStatus": "PENDINGVERIFICATION"
-            }
+          "id": "id-PENDING_VERIFICATION",
+          "processId": "p",
+          "code": "PENDING_VERIFICATION",
+          "name": "PENDING_VERIFICATION",
+          "type": "INTERMEDIATE",
+          "sla": null,
+          "isInitial": false,
+          "additionalDetails": {
+            "applicationStatus": "PENDINGVERIFICATION"
           },
           "actions": [
             {
@@ -107,49 +99,42 @@
           ]
         },
         {
-          "state": {
-            "id": "id-APPROVED",
-            "processId": "p",
-            "code": "APPROVED",
-            "name": "APPROVED",
-            "type": "TERMINAL_SUCCESS",
-            "sla": null,
-            "isInitial": false,
-            "additionalDetails": {
-              "applicationStatus": "APPROVED"
-            }
-          },
-          "actions": []
+          "id": "id-APPROVED",
+          "processId": "p",
+          "code": "APPROVED",
+          "name": "APPROVED",
+          "type": "TERMINAL_SUCCESS",
+          "sla": null,
+          "isInitial": false,
+          "additionalDetails": {
+            "applicationStatus": "APPROVED"
+          }
         }
       ]
     },
     {
-      "process": {
-        "id": "proc-v1",
-        "name": "Demo.show",
-        "code": "Demo.show",
-        "version": "v1",
-        "sla": 864000000,
-        "isActive": true,
-        "auditDetail": {
-          "createdBy": "x",
-          "createdTime": 1000,
-          "modifiedBy": "x",
-          "modifiedTime": 1000
-        }
+      "id": "proc-v1",
+      "name": "Demo.show",
+      "code": "Demo.show",
+      "version": "v1",
+      "sla": 864000000,
+      "isActive": true,
+      "auditDetail": {
+        "createdBy": "x",
+        "createdTime": 1000,
+        "modifiedBy": "x",
+        "modifiedTime": 1000
       },
       "states": [
         {
-          "state": {
-            "id": "id-START",
-            "processId": "p",
-            "code": "START",
-            "name": "START",
-            "type": "INITIAL",
-            "sla": null,
-            "isInitial": true,
-            "additionalDetails": {}
-          },
+          "id": "id-START",
+          "processId": "p",
+          "code": "START",
+          "name": "START",
+          "type": "INITIAL",
+          "sla": null,
+          "isInitial": true,
+          "additionalDetails": {},
           "actions": [
             {
               "id": "a-APPLY",
@@ -164,17 +149,15 @@
           ]
         },
         {
-          "state": {
-            "id": "id-PENDING_APPROVAL",
-            "processId": "p",
-            "code": "PENDING_APPROVAL",
-            "name": "PENDING_APPROVAL",
-            "type": "INTERMEDIATE",
-            "sla": 432000000,
-            "isInitial": false,
-            "additionalDetails": {
-              "applicationStatus": "PENDINGAPPROVAL"
-            }
+          "id": "id-PENDING_APPROVAL",
+          "processId": "p",
+          "code": "PENDING_APPROVAL",
+          "name": "PENDING_APPROVAL",
+          "type": "INTERMEDIATE",
+          "sla": 432000000,
+          "isInitial": false,
+          "additionalDetails": {
+            "applicationStatus": "PENDINGAPPROVAL"
           },
           "actions": [
             {
@@ -200,17 +183,15 @@
           ]
         },
         {
-          "state": {
-            "id": "id-PENDING_VERIFICATION",
-            "processId": "p",
-            "code": "PENDING_VERIFICATION",
-            "name": "PENDING_VERIFICATION",
-            "type": "INTERMEDIATE",
-            "sla": null,
-            "isInitial": false,
-            "additionalDetails": {
-              "applicationStatus": "PENDINGVERIFICATION"
-            }
+          "id": "id-PENDING_VERIFICATION",
+          "processId": "p",
+          "code": "PENDING_VERIFICATION",
+          "name": "PENDING_VERIFICATION",
+          "type": "INTERMEDIATE",
+          "sla": null,
+          "isInitial": false,
+          "additionalDetails": {
+            "applicationStatus": "PENDINGVERIFICATION"
           },
           "actions": [
             {
@@ -226,19 +207,16 @@
           ]
         },
         {
-          "state": {
-            "id": "id-APPROVED",
-            "processId": "p",
-            "code": "APPROVED",
-            "name": "APPROVED",
-            "type": "TERMINAL_SUCCESS",
-            "sla": null,
-            "isInitial": false,
-            "additionalDetails": {
-              "applicationStatus": "APPROVED"
-            }
-          },
-          "actions": []
+          "id": "id-APPROVED",
+          "processId": "p",
+          "code": "APPROVED",
+          "name": "APPROVED",
+          "type": "TERMINAL_SUCCESS",
+          "sla": null,
+          "isInitial": false,
+          "additionalDetails": {
+            "applicationStatus": "APPROVED"
+          }
         }
       ]
     }
