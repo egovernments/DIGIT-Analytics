@@ -51,6 +51,8 @@ public class MdmsRecordsClient {
         HttpHeaders headers = new HttpHeaders();
         headers.set(InboxPlatform.TENANT_ID, tenantId);
         headers.set(InboxPlatform.CLIENT_ID_HEADER, InboxPlatform.CLIENT_ID);
+        // mdms-v2 refuses a call without X-User-ID (USER_ID_MISSING): inbox reads as itself
+        headers.set(InboxPlatform.USER_ID, InboxPlatform.CLIENT_ID);
 
         Map<String, Object> response;
         try {

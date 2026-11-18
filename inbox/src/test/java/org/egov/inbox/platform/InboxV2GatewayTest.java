@@ -135,7 +135,8 @@ class InboxV2GatewayTest {
         assertEquals("Demo.show", response.at("/items/0/ProcessInstance/businessService").asText());
 
         assertEquals(List.of(
-                "GET http://mdms.test/mdms-v2/v2?schemaCode=INBOX.InboxQueryConfiguration&module=public-services&isActive=true&limit=10 X-Tenant-ID=STUDIO X-Client-ID=inbox",
+                // mdms-v2 refuses a call without X-User-ID (USER_ID_MISSING)
+                "GET http://mdms.test/mdms-v2/v2?schemaCode=INBOX.InboxQueryConfiguration&module=public-services&isActive=true&limit=10 X-Tenant-ID=STUDIO X-Client-ID=inbox X-User-ID=inbox",
                 "GET http://workflow.test/workflow/v3/process/definition?processCode=Demo.show X-Tenant-ID=STUDIO X-Client-ID=inbox"),
                 coreCalls.stream().distinct().sorted().toList());
     }
@@ -201,7 +202,8 @@ class InboxV2GatewayTest {
     private ResponseCreator record(JsonNode answer) {
         return request -> {
             coreCalls.add(request.getMethod() + " " + request.getURI() + " X-Tenant-ID=" + request.getHeaders().getFirst("X-Tenant-ID")
-                    + " X-Client-ID=" + request.getHeaders().getFirst("X-Client-ID"));
+                    + " X-Client-ID=" + request.getHeaders().getFirst("X-Client-ID")
+                    + (request.getHeaders().getFirst("X-User-ID") != null ? " X-User-ID=" + request.getHeaders().getFirst("X-User-ID") : ""));
             return withSuccess(answer.toString(), MediaType.APPLICATION_JSON).createResponse(request);
         };
     }
