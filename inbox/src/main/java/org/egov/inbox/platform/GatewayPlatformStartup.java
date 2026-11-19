@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Startup on DIGIT 3.0 ({@code inbox.platform=3.0}). Beans are created on first use, except the v2
- * search path, which is still built (and checked) at startup.
+ * search path and the item consumer, which are still built (and checked) at startup.
  *
  * <p>Several beans call 2.9 core services while starting: enc-client loads its policies from the 2.9
  * MDMS search API, and the v1 water/sewerage service looks up a system user in egov-user. Neither API
@@ -20,8 +20,12 @@ import org.springframework.context.annotation.Configuration;
 @ConditionalOnProperty(name = InboxPlatform.PROPERTY, havingValue = InboxPlatform.GATEWAY)
 public class GatewayPlatformStartup {
 
-    /** Classes of the v2 search path, built at startup as usual. */
+    /**
+     * Classes of the v2 search path, built at startup as usual, and the item consumer (a listener that is
+     * never asked for, so lazily it would never start).
+     */
     private static final Set<String> EAGER_PACKAGES = Set.of(
+            "org.egov.inbox.item.",
             "org.egov.inbox.store.",
             "org.egov.inbox.platform.",
             "org.egov.inbox.service.V2.",
