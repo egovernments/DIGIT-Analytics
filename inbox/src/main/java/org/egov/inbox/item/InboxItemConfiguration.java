@@ -1,7 +1,10 @@
 package org.egov.inbox.item;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -13,8 +16,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.NestedExceptionUtils;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConsumerRecordRecoverer;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
@@ -51,6 +56,23 @@ public class InboxItemConfiguration {
                                            @Value("${inbox.postgres-store.statement-timeout-millis:10000}") int statementTimeoutMillis,
                                            ObjectMapper mapper) {
         return new InboxItemWriter(url, username, password, maximumPoolSize, statementTimeoutMillis, mapper);
+    }
+
+    /**
+     * The item and dead-letter topics, created at startup when missing (with the broker's default
+     * partitions and replicas): a cluster that doesn't create topics on first use would otherwise make
+     * every dead-lettering fail, and the failed item would be read again and again, holding up the
+     * items after it. An unreachable broker is logged and does not stop the start.
+     */
+    @Bean
+    public KafkaAdmin.NewTopics inboxItemTopics(@Value("${inbox.item.topic}") String topic,
+                                                @Value("${inbox.item.dead-letter-topic:}") String deadLetterTopic) {
+        List<NewTopic> topics = new ArrayList<>();
+        topics.add(TopicBuilder.name(topic).build());
+        if (deadLetterTopic != null && !deadLetterTopic.isBlank()) {
+            topics.add(TopicBuilder.name(deadLetterTopic).build());
+        }
+        return new KafkaAdmin.NewTopics(topics.toArray(NewTopic[]::new));
     }
 
     @Bean

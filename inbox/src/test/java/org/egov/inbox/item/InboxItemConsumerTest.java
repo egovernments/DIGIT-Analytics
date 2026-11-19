@@ -38,6 +38,7 @@ import org.testcontainers.kafka.KafkaContainer;
  * The consumer end to end: items sent to a real Kafka topic land in the tenant's table; a message
  * that is not an item goes to the dead-letter topic and does not hold up the ones after it. The
  * environment's own serializer settings (DIGIT charts set JSON ones) do not change how items are read.
+ * The broker creates no topics on first use, so the inbox's own topic creation is exercised too.
  */
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(classes = InboxItemConfiguration.class, properties = {
@@ -54,7 +55,9 @@ class InboxItemConsumerTest {
     private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
 
     @Container
-    private static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
+    // Like clusters that don't create a topic on first use: the inbox must create its own topics.
+    private static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1")
+            .withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false");
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
