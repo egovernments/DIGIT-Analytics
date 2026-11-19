@@ -9,10 +9,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.egov.inbox.item.InboxItemTable;
 import org.egov.inbox.web.model.V2.InboxQueryConfiguration;
 import org.egov.inbox.web.model.V2.SearchParam;
+import org.egov.inbox.web.model.V2.SortParam;
 import org.egov.inbox.web.model.workflow.ProcessInstanceSearchCriteria;
 import org.egov.tracer.model.CustomException;
 import org.springframework.util.ObjectUtils;
@@ -26,6 +29,13 @@ import org.springframework.util.ObjectUtils;
  * {@code LIKE '%value%'}, a list means every value must match, as in Elasticsearch), CONTAINS (a jsonb
  * array column holds the value; a list means any of them).
  *
+ * <p>A path is a column, or {@code column.key} for a text value inside a jsonb column (e.g.
+ * {@code attributes.serviceCode}, read as {@code attributes ->> 'serviceCode'}); CONTAINS needs a
+ * column.
+ *
+ * <p>The inbox's own table ({@link InboxItemTable}) holds the items of every module configuration that
+ * names it, so a search there is always limited to the configuration's module.
+ *
  * <p>Times are epoch millis in the inbox. For a column listed in {@code timestampColumns} the bound
  * value is turned into a UTC timestamp ({@code to_timestamp(? / 1000.0) AT TIME ZONE 'UTC'}), so the
  * column is compared as it is and its index can be used.
@@ -37,6 +47,7 @@ public class PostgresInboxQueryBuilder {
     }
 
     private static final Pattern IDENTIFIER = Pattern.compile("[a-z_][a-z0-9_]*");
+    private static final Pattern FIELD = Pattern.compile("([a-z_][a-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]{0,62})");
     private static final Pattern QUALIFIED_IDENTIFIER = Pattern.compile("[a-z_][a-z0-9_]*(\\.[a-z_][a-z0-9_]*)?");
     private static final int DEFAULT_LIMIT = 10;
     private static final String MILLIS = "?";
@@ -61,9 +72,14 @@ public class PostgresInboxQueryBuilder {
         String where = where(query, params);
         params.add(query.limit() == null ? DEFAULT_LIMIT : query.limit());
         params.add(query.offset() == null ? 0 : query.offset());
+        SortParam.Order order = query.sortOrder();
+        String orderBy = column(config, config.getSortParam().getPath()) + " " + order;
+        if (InboxItemTable.NAME.equals(relation(config))) {
+            // Rows with the same sort value keep one order, so pages neither repeat nor skip them.
+            orderBy += ", " + InboxItemTable.BUSINESS_ID_COLUMN + " " + order;
+        }
         return new Sql("SELECT " + column(config, config.getDocumentPath()) + "::text FROM " + relation(config)
-                + where + " ORDER BY " + column(config, config.getSortParam().getPath()) + " " + query.sortOrder()
-                + " LIMIT ? OFFSET ?", params);
+                + where + " ORDER BY " + orderBy + " LIMIT ? OFFSET ?", params);
     }
 
     public Sql count(InboxQuery query) {
@@ -98,6 +114,13 @@ public class PostgresInboxQueryBuilder {
         }
 
         List<String> conditions = new ArrayList<>();
+        if (InboxItemTable.NAME.equals(relation(config))) {
+            if (ObjectUtils.isEmpty(config.getModule())) {
+                throw configError(config, "module is required to read " + InboxItemTable.NAME);
+            }
+            conditions.add(InboxItemTable.INBOX_MODULE_COLUMN + " = ?");
+            params.add(config.getModule());
+        }
         if (query.moduleCriteria() != null) {
             query.moduleCriteria().forEach((name, value) -> {
                 if (name.equals(SORT_ORDER_CONSTANT) || name.equals(SORT_BY_CONSTANT)) {
@@ -187,6 +210,9 @@ public class PostgresInboxQueryBuilder {
                 if (timestamp) {
                     throw configError(config, "CONTAINS cannot be used on timestamp column " + column);
                 }
+                if (!IDENTIFIER.matcher(column).matches()) {
+                    throw configError(config, "CONTAINS needs a jsonb array column, got '" + param.getPath() + "'");
+                }
                 if (values != null && values.isEmpty()) {
                     conditions.add("FALSE");
                     return;
@@ -218,11 +244,17 @@ public class PostgresInboxQueryBuilder {
         return relation;
     }
 
-    private static String column(InboxQueryConfiguration config, String column) {
-        if (column == null || !IDENTIFIER.matcher(column).matches()) {
-            throw configError(config, "'" + column + "' is not a lower-case column name");
+    /** The SQL for a path: the column itself, or the text of a key inside a jsonb column. */
+    private static String column(InboxQueryConfiguration config, String path) {
+        if (path != null && IDENTIFIER.matcher(path).matches()) {
+            return path;
         }
-        return column;
+        Matcher field = path == null ? null : FIELD.matcher(path);
+        if (field == null || !field.matches()) {
+            throw configError(config, "'" + path + "' is not a lower-case column name or column.key");
+        }
+        // Both parts matched plain identifier patterns, so they are safe to put in the SQL text.
+        return "(" + field.group(1) + " ->> '" + field.group(2) + "')";
     }
 
     private static boolean isTimestamp(InboxQueryConfiguration config, String column) {
