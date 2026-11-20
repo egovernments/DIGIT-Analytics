@@ -1,0 +1,58 @@
+{
+  "mdms": [
+    {
+      "id": "r1",
+      "tenantId": "STUDIO",
+      "schemaCode": "INBOX.InboxQueryConfiguration",
+      "uniqueIdentifier": "public-services",
+      "data": {
+        "module": "public-services",
+        "store": "POSTGRES",
+        "index": "inbox_application",
+        "statePath": "workflow_status",
+        "lastModifiedPath": "updated_at",
+        "documentPath": "data",
+        "timestampColumns": [
+          "created_at",
+          "updated_at"
+        ],
+        "sortBy": {
+          "path": "created_at",
+          "defaultOrder": "DESC"
+        },
+        "allowedSearchCriteria": [
+          {
+            "name": "status",
+            "path": "workflow_status",
+            "isMandatory": false
+          },
+          {
+            "name": "applicationNumber",
+            "path": "application_number",
+            "isMandatory": false
+          },
+          {
+            "name": "module",
+            "path": "module",
+            "operator": "EQUAL",
+            "isMandatory": true
+          },
+          {
+            "name": "businessService",
+            "path": "business_service",
+            "operator": "EQUAL",
+            "isMandatory": true
+          },
+          {
+            "name": "assignee",
+            "path": "assignees",
+            "operator": "CONTAINS",
+            "isMandatory": false
+          }
+        ]
+      },
+      "isActive": true
+    }
+  ],
+  "totalCount": 1
+}

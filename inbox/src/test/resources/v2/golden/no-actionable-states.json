@@ -1,0 +1,13 @@
+{
+  "description" : "Caller's roles act on no state: empty inbox without asking Elasticsearch",
+  "elasticsearchCalls" : [ ],
+  "otherCalls" : [ "POST http://mdms.test/egov-mdms-service/v1/_search {\"MdmsCriteria\":{\"moduleDetails\":[{\"masterDetails\":[{\"filter\":null,\"name\":\"InboxQueryConfiguration\"}],\"moduleName\":\"INBOX\"}],\"tenantId\":\"dev\"}}", "POST http://workflow.test/egov-workflow-v2/egov-wf/businessservice/_search?businessServices=Demo.show&tenantId=dev {}" ],
+  "response" : {
+    "items" : [ ],
+    "nearingSlaCount" : 0,
+    "responseInfo" : null,
+    "statusMap" : [ ],
+    "totalCount" : 0
+  },
+  "status" : 200
+}
