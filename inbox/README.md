@@ -34,6 +34,14 @@ The service aggregates data from workflow and configured municipal services, to 
 `_search` : This API is used to search inbox application data based on the criteria provided
 
 
+### DIGIT 3.0: caller from the gateway
+
+With `inbox.platform=3.0` the tenant, user and roles come from the headers Kong sets after verifying
+the token (`X-Tenant-ID`, `X-User-ID`, `X-JWT-realm-roles`); the body's tenant and `RequestInfo` user
+are replaced with them. The inbox must therefore be reachable only through a Kong route carrying the
+platform's plugin chain (`dynamic-jwt`, `keycloak-rbac`, `header-enrichment`), which overwrites those
+headers with the token's values. Roles are read only from `X-JWT-realm-roles`, never from `X-Roles`.
+
 ### Postgres store: inbox_item indexes
 
 The `inbox_item` table (one per tenant schema) is indexed for searches that always give `module` and

@@ -18,7 +18,6 @@ public final class InboxPlatform {
     public static final String USER_ID = "X-User-ID";
     public static final String CLIENT_ID_HEADER = "X-Client-ID";
     public static final String JWT_ROLES = "X-JWT-realm-roles";
-    public static final String ROLES = "X-Roles";
     public static final String JWT_USER_NAME = "X-JWT-preferred_username";
 
     private InboxPlatform() {

@@ -215,6 +215,22 @@ class InboxV2GatewayTest {
     }
 
     @Test
+    void rolesSentOutsideTheTokenAreIgnored() throws Exception {
+        // X-Roles is not set by Kong: a caller choosing it gets no actionable states.
+        MvcResult result = mvc.perform(post("/v2/_search")
+                        .header("X-Tenant-ID", "STUDIO")
+                        .header("X-User-ID", "u-emp")
+                        .header("X-Roles", "DEMO_SHOW_APPROVER,STUDIO_EMPLOYEE")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body(Map.of())))
+                .andReturn();
+        assertEquals(200, result.getResponse().getStatus(), result.getResponse().getContentAsString());
+        JsonNode response = JSON.readTree(result.getResponse().getContentAsString());
+        assertEquals(List.of(), numbers(response));
+        assertEquals(0, response.get("totalCount").asInt());
+    }
+
+    @Test
     void theTenantComesFromTheTokenNotTheBody() throws Exception {
         JsonNode response = search("STUDIOB", "DEMO_SHOW_APPROVER", Map.of());
         assertEquals(List.of("APP-1"), numbers(response));

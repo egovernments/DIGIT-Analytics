@@ -21,6 +21,12 @@ import lombok.extern.slf4j.Slf4j;
  * ({@code X-Tenant-ID} from the token's realm, {@code X-User-ID}, the realm roles). The body's tenant
  * is replaced with the header's, and the body's RequestInfo user is rebuilt from the headers, so the
  * rest of the inbox (role-based states, audit) works on the authenticated caller only.
+ *
+ * <p>These headers are trusted, so the inbox must be reached only through a Kong route with the
+ * platform's plugin chain: {@code dynamic-jwt} verifies the token, {@code keycloak-rbac} refuses a token
+ * without realm roles, and {@code header-enrichment} overwrites {@code X-Tenant-ID}, {@code X-User-ID},
+ * {@code X-JWT-realm-roles} and the other {@code X-JWT-*} claims with the token's values. Roles come
+ * only from {@code X-JWT-realm-roles}; {@code X-Roles}, which Kong never sets, is not read.
  */
 @Slf4j
 @Component
@@ -63,10 +69,9 @@ public class GatewayCaller implements CallerResolver {
         if (userId == null || userId.isBlank()) {
             throw new CustomException("USER_HEADER_MISSING", "X-User-ID header is required");
         }
+        // Only the token's roles, which Kong sets: a header Kong passes through as sent (such as
+        // X-Roles) would let a caller choose their roles. Without them the caller acts on nothing.
         String roles = http.getHeader(InboxPlatform.JWT_ROLES);
-        if (roles == null || roles.isBlank()) {
-            roles = http.getHeader(InboxPlatform.ROLES);
-        }
 
         User user = new User();
         user.setUuid(userId.trim());
