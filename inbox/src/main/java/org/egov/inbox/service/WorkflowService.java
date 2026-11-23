@@ -28,7 +28,6 @@ import org.egov.inbox.web.model.workflow.*;
 import org.egov.inbox.platform.ProcessDefinitionsClient;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
@@ -191,7 +190,6 @@ public class WorkflowService {
 	}
 
 
-	@Cacheable(value="businessServices")
 	public List<BusinessService> getBusinessServices(InboxRequest request) {
 		if (processDefinitions != null)
 			return processDefinitions.businessServices(request.getInbox().getTenantId(),

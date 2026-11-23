@@ -79,6 +79,9 @@ class InboxV2GatewayTest {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private ProcessDefinitionsClient processDefinitions;
+
     private final List<String> coreCalls = new ArrayList<>();
 
     @BeforeAll
@@ -129,6 +132,7 @@ class InboxV2GatewayTest {
     @BeforeEach
     void coreServices() throws Exception {
         coreCalls.clear();
+        processDefinitions.clearCache();
         MockRestServiceServer server = MockRestServiceServer.bindTo(restTemplate).ignoreExpectOrder(true).build();
         server.expect(ExpectedCount.manyTimes(), requestTo(startsWith("http://mdms.test/mdms-v2/v2?")))
                 .andExpect(method(HttpMethod.GET))
@@ -181,6 +185,23 @@ class InboxV2GatewayTest {
         assertEquals(List.of("APP-1"), numbers(mine));
         assertEquals(1, mine.get("totalCount").asInt());
         assertEquals(allActionable, statusMap(mine));
+    }
+
+    @Test
+    void theWorkflowIsReadOncePerProcessAndThenKept() throws Exception {
+        search("STUDIO", "DEMO_SHOW_APPROVER,STUDIO_EMPLOYEE", Map.of());
+        assertEquals(1, workflowCalls(), coreCalls::toString);
+
+        search("STUDIO", "DEMO_SHOW_APPROVER,STUDIO_EMPLOYEE", Map.of("status", List.of("PENDING_APPROVAL")));
+        assertEquals(1, workflowCalls(), coreCalls::toString);
+
+        // Kept per tenant.
+        search("STUDIOB", "DEMO_SHOW_APPROVER", Map.of());
+        assertEquals(2, workflowCalls(), coreCalls::toString);
+    }
+
+    private long workflowCalls() {
+        return coreCalls.stream().filter(call -> call.contains("/workflow/v3/process/definition")).count();
     }
 
     @Test

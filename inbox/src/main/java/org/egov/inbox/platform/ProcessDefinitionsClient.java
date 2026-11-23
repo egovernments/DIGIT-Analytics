@@ -8,6 +8,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.egov.inbox.web.model.workflow.Action;
 import org.egov.inbox.web.model.workflow.BusinessService;
@@ -35,6 +37,11 @@ import org.springframework.web.util.UriComponentsBuilder;
  * version counts, and the SLAs come from the latest version that has the state. The state's code is
  * its id ({@code uuid}) and name; {@code applicationStatus} is the state's
  * {@code additionalDetails.applicationStatus} when set, else the code.
+ *
+ * <p>A process's definitions are kept per tenant for {@code cache.expiry.minutes}, so a search makes
+ * no workflow call for processes it has seen recently; a republished workflow shows within that time.
+ * A failed call or a process without definitions is not kept, and at most
+ * {@code inbox.process-definitions.cache-capacity} processes are (0 keeps none).
  */
 @Slf4j
 @Component
@@ -45,12 +52,25 @@ public class ProcessDefinitionsClient {
 
     private final RestTemplate restTemplate;
     private final String url;
+    private final long expiryMillis;
+    private final int capacity;
+    private final Map<Key, Cached> cache = new ConcurrentHashMap<>();
+
+    private record Key(String tenantId, String processCode) {
+    }
+
+    private record Cached(List<Map<String, Object>> definitions, long expiresAt) {
+    }
 
     public ProcessDefinitionsClient(RestTemplate restTemplate,
                                     @Value("${workflow.host}") String host,
-                                    @Value("${workflow.businessservice.search.path}") String path) {
+                                    @Value("${workflow.businessservice.search.path}") String path,
+                                    @Value("${cache.expiry.minutes:10}") long expiryMinutes,
+                                    @Value("${inbox.process-definitions.cache-capacity:1000}") int capacity) {
         this.restTemplate = restTemplate;
         this.url = MdmsRecordsClient.trimSlash(host) + path;
+        this.expiryMillis = TimeUnit.MINUTES.toMillis(expiryMinutes);
+        this.capacity = capacity;
     }
 
     public List<BusinessService> businessServices(String tenantId, List<String> processCodes) {
@@ -68,6 +88,30 @@ public class ProcessDefinitionsClient {
     }
 
     private List<Map<String, Object>> definitions(String tenantId, String code) {
+        Key key = new Key(tenantId, code);
+        long now = System.currentTimeMillis();
+        Cached cached = cache.get(key);
+        if (cached != null && cached.expiresAt() > now) {
+            return cached.definitions();
+        }
+        List<Map<String, Object>> definitions = fetch(tenantId, code);
+        if (!definitions.isEmpty() && capacity > 0 && expiryMillis > 0) {
+            if (cache.size() >= capacity) {
+                cache.values().removeIf(c -> c.expiresAt() <= now);
+            }
+            if (cache.size() < capacity || cache.containsKey(key)) {
+                cache.put(key, new Cached(List.copyOf(definitions), now + expiryMillis));
+            }
+        }
+        return definitions;
+    }
+
+    /** Forgets every kept definition. */
+    void clearCache() {
+        cache.clear();
+    }
+
+    private List<Map<String, Object>> fetch(String tenantId, String code) {
         URI uri = UriComponentsBuilder.fromUriString(url).queryParam("processCode", code).encode().build().toUri();
         HttpHeaders headers = new HttpHeaders();
         headers.set(InboxPlatform.TENANT_ID, tenantId);

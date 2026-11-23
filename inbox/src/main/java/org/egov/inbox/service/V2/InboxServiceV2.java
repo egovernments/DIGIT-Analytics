@@ -68,8 +68,8 @@ public class InboxServiceV2 {
         List<Inbox> items = getInboxItems(inboxRequest, inboxQueryConfiguration, businessServices);
         enrichProcessInstanceInInboxItems(items);
         Integer totalCount = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? 0 : getTotalApplicationCount(inboxRequest, inboxQueryConfiguration);
-        List<HashMap<String, Object>> statusCountMap = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? new ArrayList<>() : getStatusCountMap(inboxRequest, inboxQueryConfiguration, actionableStatuses);
-        Integer nearingSlaCount = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? 0 : getApplicationsNearingSlaCount(inboxRequest, inboxQueryConfiguration);
+        List<HashMap<String, Object>> statusCountMap = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? new ArrayList<>() : getStatusCountMap(inboxRequest, inboxQueryConfiguration, actionableStatuses, businessServices);
+        Integer nearingSlaCount = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? 0 : getApplicationsNearingSlaCount(inboxRequest, inboxQueryConfiguration, businessServices);
         InboxResponse inboxResponse = InboxResponse.builder().items(items).totalCount(totalCount).statusMap(statusCountMap).nearingSlaCount(nearingSlaCount).build();
 
         return inboxResponse;
@@ -188,7 +188,8 @@ public class InboxServiceV2 {
      * whoever they are assigned to (moduleSearchCriteria.assignee, the process assignee). The
      * tenant, dates and other module criteria still apply.
      */
-    public List<HashMap<String, Object>> getStatusCountMap(InboxRequest inboxRequest, InboxQueryConfiguration configuration, List<String> actionableStatuses){
+    public List<HashMap<String, Object>> getStatusCountMap(InboxRequest inboxRequest, InboxQueryConfiguration configuration, List<String> actionableStatuses,
+                                                          List<BusinessService> businessServices){
         Map<String, Integer> countByState = stores.forConfig(configuration).countByState(statusCountQuery(inboxRequest, configuration, actionableStatuses));
         Set<String> actionable = new HashSet<>(actionableStatuses);
         HashMap<String, Object> statusCountMap = new HashMap<>();
@@ -196,7 +197,7 @@ public class InboxServiceV2 {
             if (actionable.contains(state))
                 statusCountMap.put(state, count);
         });
-        List<HashMap<String, Object>> transformedStatusMap = transformStatusMap(inboxRequest, statusCountMap);
+        List<HashMap<String, Object>> transformedStatusMap = transformStatusMap(statusCountMap, businessServices);
         return transformedStatusMap;
     }
 
@@ -234,12 +235,10 @@ public class InboxServiceV2 {
         }
     }
 
-    private List<HashMap<String,Object>> transformStatusMap(InboxRequest request,HashMap<String, Object> statusCountMap) {
+    private List<HashMap<String,Object>> transformStatusMap(HashMap<String, Object> statusCountMap, List<BusinessService> businessServices) {
 
         if(CollectionUtils.isEmpty(statusCountMap))
             return null;
-
-        List<BusinessService> businessServices = workflowService.getBusinessServices(request);
 
         Map<String,String> statusIdToBusinessServiceMap = workflowService.getStatusIdToBusinessServiceMap(businessServices);
         Map<String, String> statusIdToApplicationStatusMap = workflowService.getApplicationStatusIdToStatusMap(businessServices);
@@ -288,8 +287,7 @@ public class InboxServiceV2 {
         return inboxItemList;
     }
 
-    public Integer getApplicationsNearingSlaCount(InboxRequest inboxRequest, InboxQueryConfiguration configuration) {
-        List<BusinessService> businessServicesObjs = workflowService.getBusinessServices(inboxRequest);
+    public Integer getApplicationsNearingSlaCount(InboxRequest inboxRequest, InboxQueryConfiguration configuration, List<BusinessService> businessServicesObjs) {
         Map<String, Long> businessServiceSlaMap = new HashMap<>();
         Map<String, HashSet<String>> businessServiceVsStateUuids = new HashMap<>();
         businessServicesObjs.forEach(businessService -> {
