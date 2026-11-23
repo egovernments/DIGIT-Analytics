@@ -12,7 +12,7 @@ import org.egov.tracer.model.CustomException;
 /**
  * One inbox search, independent of the store that answers it: the module's configuration, the
  * request's tenant, the caller's module criteria (as sent, including sortOrder), the process criteria
- * the service filled in (tenant, actionable states, ...; null for a plain index search) and the page.
+ * the service filled in (tenant, actionable states, ...; only the tenant for a plain index search) and the page.
  */
 public record InboxQuery(InboxQueryConfiguration config,
                          String tenantId,

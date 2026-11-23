@@ -323,7 +323,11 @@ public class InboxServiceV2 {
 
     private List<Data> getDataFromSimpleSearch(SearchRequest searchRequest, InboxQueryConfiguration configuration) {
         IndexSearchCriteria criteria = searchRequest.getIndexSearchCriteria();
-        InboxQuery query = new InboxQuery(configuration, criteria.getTenantId(), criteria.getModuleSearchCriteria(), null, criteria.getOffset(), criteria.getLimit());
+        // The request's tenant (the token's on 3.0) bounds the search, like _search; the caller's
+        // module criteria can only narrow it further.
+        ProcessInstanceSearchCriteria tenantOnly = new ProcessInstanceSearchCriteria();
+        tenantOnly.setTenantId(criteria.getTenantId());
+        InboxQuery query = new InboxQuery(configuration, criteria.getTenantId(), criteria.getModuleSearchCriteria(), tenantOnly, criteria.getOffset(), criteria.getLimit());
         List<Map<String, Object>> documents = stores.forConfig(configuration).search(query);
 
         List<Data> dataList = new ArrayList<>();

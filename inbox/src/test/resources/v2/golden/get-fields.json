@@ -18,6 +18,10 @@
             "term" : {
               "Data.module.keyword" : "Demo"
             }
+          }, {
+            "term" : {
+              "Data.tenantId.keyword" : "dev"
+            }
           } ]
         }
       },
