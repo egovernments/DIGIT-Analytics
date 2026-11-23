@@ -1,14 +1,17 @@
 package org.egov.inbox.store;
 
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import org.egov.inbox.item.InboxItemTable;
 import org.egov.tracer.model.CustomException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -36,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(prefix = "inbox.postgres-store", name = "url")
 public class PostgresInboxStore implements InboxStore, DisposableBean {
 
+    /** SQLSTATE undefined_table. */
+    private static final String UNDEFINED_TABLE = "42P01";
     private static final Pattern TENANT = Pattern.compile("[A-Za-z0-9_]{1,63}");
     private static final TypeReference<LinkedHashMap<String, Object>> DOCUMENT = new TypeReference<>() {
     };
@@ -82,19 +87,19 @@ public class PostgresInboxStore implements InboxStore, DisposableBean {
     @Override
     public List<Map<String, Object>> search(InboxQuery query) {
         PostgresInboxQueryBuilder.Sql statement = sql.search(query);
-        return run(query, jdbc -> jdbc.query(statement.text(), (rs, i) -> document(rs.getString(1)), statement.params().toArray()));
+        return run(query, List.of(), jdbc -> jdbc.query(statement.text(), (rs, i) -> document(rs.getString(1)), statement.params().toArray()));
     }
 
     @Override
     public Integer count(InboxQuery query) {
         PostgresInboxQueryBuilder.Sql statement = sql.count(query);
-        return run(query, jdbc -> jdbc.queryForObject(statement.text(), Long.class, statement.params().toArray()).intValue());
+        return run(query, 0, jdbc -> jdbc.queryForObject(statement.text(), Long.class, statement.params().toArray()).intValue());
     }
 
     @Override
     public Map<String, Integer> countByState(InboxQuery query) {
         PostgresInboxQueryBuilder.Sql statement = sql.countByState(query);
-        return run(query, jdbc -> {
+        return run(query, Map.of(), jdbc -> {
             Map<String, Integer> counts = new LinkedHashMap<>();
             jdbc.query(statement.text(), rs -> {
                 counts.put(rs.getString(1), (int) rs.getLong(2));
@@ -106,16 +111,41 @@ public class PostgresInboxStore implements InboxStore, DisposableBean {
     @Override
     public Integer countModifiedBetween(InboxQuery query, long from, long to) {
         PostgresInboxQueryBuilder.Sql statement = sql.countModifiedBetween(query, from, to);
-        return run(query, jdbc -> jdbc.queryForObject(statement.text(), Long.class, statement.params().toArray()).intValue());
+        return run(query, 0, jdbc -> jdbc.queryForObject(statement.text(), Long.class, statement.params().toArray()).intValue());
     }
 
-    /** Runs the work in a read-only transaction, in the tenant's schema when schema-per-tenant. */
-    private <T> T run(InboxQuery query, Function<JdbcTemplate, T> work) {
+    /**
+     * Runs the work in a read-only transaction, in the tenant's schema when schema-per-tenant. The
+     * inbox's own table is created on a tenant's first item, so until then the tenant has none:
+     * {@code noItems}. Any other missing relation is a configuration error.
+     */
+    private <T> T run(InboxQuery query, T noItems, Function<JdbcTemplate, T> work) {
         String schema = schemaPerTenant ? tenantSchema(query.tenantId()) : null;
-        return readOnly.execute(status -> {
-            TransactionSettings.apply(jdbc, statementTimeoutMillis, schema);
-            return work.apply(jdbc);
-        });
+        try {
+            return readOnly.execute(status -> {
+                TransactionSettings.apply(jdbc, statementTimeoutMillis, schema);
+                return work.apply(jdbc);
+            });
+        } catch (DataAccessException e) {
+            if (!UNDEFINED_TABLE.equals(sqlState(e))) {
+                throw e;
+            }
+            if (InboxItemTable.NAME.equals(query.config().getIndex())) {
+                return noItems;
+            }
+            throw new CustomException("INBOX_STORE_RELATION_MISSING", "Relation '" + query.config().getIndex()
+                    + "' of module " + query.config().getModule() + " does not exist"
+                    + (schema != null ? " in schema " + schema : ""));
+        }
+    }
+
+    private static String sqlState(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof SQLException sql && sql.getSQLState() != null) {
+                return sql.getSQLState();
+            }
+        }
+        return null;
     }
 
     private static String tenantSchema(String tenantId) {

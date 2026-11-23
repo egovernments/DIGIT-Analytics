@@ -19,7 +19,6 @@ import org.egov.tracer.model.CustomException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.BadSqlGrammarException;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -190,7 +189,7 @@ class PostgresInboxStoreTest {
 
     @Test
     void aTenantWithoutSchemaFindsNoRelation() {
-        assertThrows(BadSqlGrammarException.class, () -> store.count(query("NOSUCHTENANT", criteria(), process("PENDING_APPROVAL"), 0, 10)));
+        assertEquals("INBOX_STORE_RELATION_MISSING", code(() -> store.count(query("NOSUCHTENANT", criteria(), process("PENDING_APPROVAL"), 0, 10))));
     }
 
     @Test
@@ -216,6 +215,31 @@ class PostgresInboxStoreTest {
         InboxQueryConfiguration badSort = config();
         badSort.setSortParam(SortParam.builder().path("created_time DESC, (SELECT 1)").order(SortParam.Order.ASC).build());
         assertEquals("INBOX_STORE_CONFIG_INVALID", code(() -> store.search(new InboxQuery(badSort, "STUDIO", criteria(), process("PENDING_APPROVAL"), 0, 10))));
+    }
+
+    @Test
+    void aTenantWithoutItemsYetHasAnEmptyInbox() {
+        // inbox_item is created on the tenant's first item: STUDIO has none yet, NEWTENANT not even a schema.
+        InboxQueryConfiguration items = config();
+        items.setIndex("inbox_item");
+        for (String tenant : List.of("STUDIO", "NEWTENANT")) {
+            InboxQuery q = new InboxQuery(items, tenant, criteria(), process("PENDING_APPROVAL"), 0, 10);
+            assertEquals(List.of(), store.search(q));
+            assertEquals(0, store.count(q));
+            assertEquals(Map.of(), store.countByState(q));
+            assertEquals(0, store.countModifiedBetween(q, 0, Long.MAX_VALUE));
+        }
+    }
+
+    @Test
+    void aMissingProductRelationIsAConfigurationError() {
+        InboxQueryConfiguration missing = config();
+        missing.setIndex("inbox_missing");
+        InboxQuery q = new InboxQuery(missing, "STUDIO", criteria(), process("PENDING_APPROVAL"), 0, 10);
+        assertEquals("INBOX_STORE_RELATION_MISSING", code(() -> store.search(q)));
+        assertEquals("INBOX_STORE_RELATION_MISSING", code(() -> store.count(q)));
+        // The pool is fine afterwards.
+        assertEquals(List.of("APP-1"), numbers(store.search(query("STUDIO", criteria(), process("PENDING_APPROVAL"), 0, 10))));
     }
 
     @Test
