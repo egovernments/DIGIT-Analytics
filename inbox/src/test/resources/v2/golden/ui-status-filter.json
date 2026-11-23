@@ -91,10 +91,6 @@
             }
           }, {
             "terms" : {
-              "Data.currentProcessInstance.state.uuid.keyword" : [ "wf-state-pending", "wf-state-approved" ]
-            }
-          }, {
-            "terms" : {
               "Data.currentProcessInstance.state.uuid.keyword" : [ "wf-state-pending", "wf-state-verify" ]
             }
           } ]

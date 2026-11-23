@@ -83,10 +83,6 @@
             }
           }, {
             "term" : {
-              "Data.currentProcessInstance.assignes.uuid.keyword" : "u-employee"
-            }
-          }, {
-            "term" : {
               "Data.module.keyword" : "Demo"
             }
           }, {

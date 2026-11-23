@@ -63,10 +63,12 @@ public class InboxServiceV2 {
         validator.validateSearchCriteria(inboxRequest);
         InboxQueryConfiguration inboxQueryConfiguration = mdmsUtil.getConfigFromMDMS(inboxRequest.getInbox().getTenantId(), inboxRequest.getInbox().getProcessSearchCriteria().getModuleName());
         hashParamsWhereverRequiredBasedOnConfiguration(inboxRequest.getInbox().getModuleSearchCriteria(), inboxQueryConfiguration);
-        List<Inbox> items = getInboxItems(inboxRequest, inboxQueryConfiguration);
+        List<BusinessService> businessServices = workflowService.getBusinessServices(inboxRequest);
+        List<String> actionableStatuses = enrichActionableStatusesFromRole(inboxRequest, businessServices);
+        List<Inbox> items = getInboxItems(inboxRequest, inboxQueryConfiguration, businessServices);
         enrichProcessInstanceInInboxItems(items);
         Integer totalCount = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? 0 : getTotalApplicationCount(inboxRequest, inboxQueryConfiguration);
-        List<HashMap<String, Object>> statusCountMap = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? new ArrayList<>() : getStatusCountMap(inboxRequest, inboxQueryConfiguration);
+        List<HashMap<String, Object>> statusCountMap = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? new ArrayList<>() : getStatusCountMap(inboxRequest, inboxQueryConfiguration, actionableStatuses);
         Integer nearingSlaCount = CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus()) ? 0 : getApplicationsNearingSlaCount(inboxRequest, inboxQueryConfiguration);
         InboxResponse inboxResponse = InboxResponse.builder().items(items).totalCount(totalCount).statusMap(statusCountMap).nearingSlaCount(nearingSlaCount).build();
 
@@ -118,9 +120,7 @@ public class InboxServiceV2 {
         });
     }
 
-    private List<Inbox> getInboxItems(InboxRequest inboxRequest, InboxQueryConfiguration configuration){
-        List<BusinessService> businessServices = workflowService.getBusinessServices(inboxRequest);
-        enrichActionableStatusesFromRole(inboxRequest, businessServices);
+    private List<Inbox> getInboxItems(InboxRequest inboxRequest, InboxQueryConfiguration configuration, List<BusinessService> businessServices){
         if(CollectionUtils.isEmpty(inboxRequest.getInbox().getProcessSearchCriteria().getStatus())){
             return new ArrayList<>();
         }
@@ -133,7 +133,11 @@ public class InboxServiceV2 {
                 inboxRequest.getInbox().getProcessSearchCriteria(), inboxRequest.getInbox().getOffset(), inboxRequest.getInbox().getLimit());
     }
 
-    private void enrichActionableStatusesFromRole(InboxRequest inboxRequest, List<BusinessService> businessServices) {
+    /**
+     * Narrows the request's states to those the caller's roles can act on (all of them when none are
+     * asked for) and returns all the actionable states.
+     */
+    private List<String> enrichActionableStatusesFromRole(InboxRequest inboxRequest, List<BusinessService> businessServices) {
         ProcessInstanceSearchCriteria processCriteria = inboxRequest.getInbox().getProcessSearchCriteria();
         String tenantId = inboxRequest.getInbox().getTenantId();
         processCriteria.setTenantId(tenantId);
@@ -156,19 +160,40 @@ public class InboxServiceV2 {
         }else{
             inboxRequest.getInbox().getProcessSearchCriteria().setStatus(new ArrayList<>());
         }
+        return new ArrayList<>(StatusIdNameMap.keySet());
+    }
+
+    private InboxQuery statusCountQuery(InboxRequest inboxRequest, InboxQueryConfiguration configuration, List<String> actionableStatuses) {
+        Map<String, Object> moduleCriteria = new HashMap<>(inboxRequest.getInbox().getModuleSearchCriteria());
+        moduleCriteria.remove(STATUS_CRITERIA_KEY);
+        moduleCriteria.remove(ASSIGNEE_CRITERIA_KEY);
+        ProcessInstanceSearchCriteria requested = inboxRequest.getInbox().getProcessSearchCriteria();
+        ProcessInstanceSearchCriteria process = new ProcessInstanceSearchCriteria();
+        process.setTenantId(requested.getTenantId());
+        process.setBusinessService(requested.getBusinessService());
+        process.setModuleName(requested.getModuleName());
+        process.setFromDate(requested.getFromDate());
+        process.setToDate(requested.getToDate());
+        process.setStatus(actionableStatuses);
+        return new InboxQuery(configuration, inboxRequest.getInbox().getTenantId(), moduleCriteria, process, null, null);
     }
 
     public Integer getTotalApplicationCount(InboxRequest inboxRequest, InboxQueryConfiguration configuration){
         return stores.forConfig(configuration).count(inboxQuery(inboxRequest, configuration));
     }
 
-    /** Count per actionable state, of the documents matching the request's criteria. */
-    public List<HashMap<String, Object>> getStatusCountMap(InboxRequest inboxRequest, InboxQueryConfiguration configuration){
-        Map<String, Integer> countByState = stores.forConfig(configuration).countByState(inboxQuery(inboxRequest, configuration));
-        Set<String> actionableStatuses = new HashSet<>(inboxRequest.getInbox().getProcessSearchCriteria().getStatus());
+    /**
+     * Count per actionable state, for the status filter: every actionable state keeps its count
+     * whichever states are ticked (moduleSearchCriteria.status, the narrowed process states) and
+     * whoever they are assigned to (moduleSearchCriteria.assignee, the process assignee). The
+     * tenant, dates and other module criteria still apply.
+     */
+    public List<HashMap<String, Object>> getStatusCountMap(InboxRequest inboxRequest, InboxQueryConfiguration configuration, List<String> actionableStatuses){
+        Map<String, Integer> countByState = stores.forConfig(configuration).countByState(statusCountQuery(inboxRequest, configuration, actionableStatuses));
+        Set<String> actionable = new HashSet<>(actionableStatuses);
         HashMap<String, Object> statusCountMap = new HashMap<>();
         countByState.forEach((state, count) -> {
-            if (actionableStatuses.contains(state))
+            if (actionable.contains(state))
                 statusCountMap.put(state, count);
         });
         List<HashMap<String, Object>> transformedStatusMap = transformStatusMap(inboxRequest, statusCountMap);

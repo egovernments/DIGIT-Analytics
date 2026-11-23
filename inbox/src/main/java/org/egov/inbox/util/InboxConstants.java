@@ -36,6 +36,10 @@ public class InboxConstants {
     public static final String STATE_UUID_PATH = "$.currentProcessInstance.state.uuid";
 
     public static final String APPLICATION_STATUS_KEY = "applicationstatus";
+    /** moduleSearchCriteria key the inbox UI sends the ticked workflow states in. */
+    public static final String STATUS_CRITERIA_KEY = "status";
+    /** moduleSearchCriteria key of the inbox UI's "assigned to me" filter. */
+    public static final String ASSIGNEE_CRITERIA_KEY = "assignee";
 
     public static final String BUSINESSSERVICE_KEY = "businessservice";
 

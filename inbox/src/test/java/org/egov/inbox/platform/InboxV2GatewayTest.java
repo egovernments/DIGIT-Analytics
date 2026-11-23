@@ -168,6 +168,22 @@ class InboxV2GatewayTest {
     }
 
     @Test
+    void statusCountsDoNotDependOnTheTickedStatesOrTheAssignee() throws Exception {
+        Map<String, String> allActionable = Map.of("PENDING_APPROVAL", "PENDINGAPPROVAL:1", "PENDING_VERIFICATION", "PENDINGVERIFICATION:1");
+
+        JsonNode ticked = search("STUDIO", "DEMO_SHOW_APPROVER,STUDIO_EMPLOYEE", Map.of("status", List.of("PENDING_APPROVAL")));
+        assertEquals(List.of("APP-1"), numbers(ticked));
+        assertEquals(1, ticked.get("totalCount").asInt());
+        assertEquals(allActionable, statusMap(ticked));
+
+        // APP-2 is assigned to nobody: items and total follow "assigned to me", the counts do not.
+        JsonNode mine = search("STUDIO", "DEMO_SHOW_APPROVER,STUDIO_EMPLOYEE", Map.of("assignee", "u-emp"));
+        assertEquals(List.of("APP-1"), numbers(mine));
+        assertEquals(1, mine.get("totalCount").asInt());
+        assertEquals(allActionable, statusMap(mine));
+    }
+
+    @Test
     void rolesComeFromTheTokenNotTheBody() throws Exception {
         // Only the verifier role: actionable on PENDING_VERIFICATION alone (on both versions).
         assertEquals(List.of("APP-2"), numbers(search("STUDIO", "DEMO_SHOW_VERIFIER", Map.of())));
