@@ -2,6 +2,7 @@ package org.egov.inbox.platform;
 
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -104,6 +105,24 @@ class InboxV2GatewayTest {
             s.execute("INSERT INTO \"STUDIOB\".application VALUES"
                     + " ('APP-1','Demo','show','ACTIVE','PENDING_APPROVAL',null,'{\"businessService\":\"Demo.show\"}',"
                     + now + " - interval '1 day', " + now + " - interval '1 day')");
+
+            // A tenant whose relation is a table holding whatever documents a product sent, as
+            // inbox_item can: one complete, one without a process instance or audit details, one
+            // whose process instance and audit details are not objects.
+            s.execute("CREATE SCHEMA \"STUDIOC\"");
+            s.execute("CREATE TABLE \"STUDIOC\".inbox_application (application_number text, module text, business_service text,"
+                    + " service_code text, status text, workflow_status text, assignees jsonb, created_at timestamp, updated_at timestamp, data jsonb)");
+            s.execute("GRANT USAGE ON SCHEMA \"STUDIOC\" TO inbox_reader");
+            s.execute("GRANT SELECT ON \"STUDIOC\".inbox_application TO inbox_reader");
+            long twoDaysAgo = System.currentTimeMillis() - 2L * 24 * 60 * 60 * 1000 - 60 * 60 * 1000;
+            s.execute("INSERT INTO \"STUDIOC\".inbox_application VALUES"
+                    + " ('APP-1','Demo','show','S','ACTIVE','PENDING_APPROVAL','[]'," + now + " - interval '3 days'," + now + " - interval '3 days',"
+                    + "'{\"applicationNumber\":\"APP-1\",\"auditDetails\":{\"createdTime\":" + twoDaysAgo + ",\"lastModifiedTime\":" + twoDaysAgo + "},"
+                    + "\"currentProcessInstance\":{\"businessService\":\"Demo.show\",\"state\":{\"uuid\":\"PENDING_APPROVAL\",\"state\":\"PENDING_APPROVAL\"}}}'),"
+                    + " ('APP-2','Demo','show','S','ACTIVE','PENDING_APPROVAL','[]'," + now + " - interval '2 days'," + now + " - interval '2 days',"
+                    + "'{\"applicationNumber\":\"APP-2\"}'),"
+                    + " ('APP-3','Demo','show','S','ACTIVE','PENDING_APPROVAL','[]'," + now + " - interval '1 day'," + now + " - interval '1 day',"
+                    + "'{\"applicationNumber\":\"APP-3\",\"auditDetails\":\"x\",\"currentProcessInstance\":\"broken\"}')");
         }
     }
 
@@ -164,6 +183,20 @@ class InboxV2GatewayTest {
         assertEquals(List.of("APP-1"), numbers(response));
         assertEquals(1, response.get("totalCount").asInt());
         coreCalls.forEach(call -> assertEquals(true, call.contains("X-Tenant-ID=STUDIOB"), call));
+    }
+
+    @Test
+    void anIncompleteDocumentDoesNotFailThePage() throws Exception {
+        JsonNode response = search("STUDIOC", "DEMO_SHOW_APPROVER", Map.of());
+
+        assertEquals(List.of("APP-1", "APP-2", "APP-3"), numbers(response));
+        // APP-1: state SLA 5 days, 2 days 1 hour in the state.
+        assertEquals(3, response.at("/items/0/businessObject/serviceSla").asInt());
+        assertEquals("PENDING_APPROVAL", response.at("/items/0/ProcessInstance/state/state").asText());
+        // Without what the SLA needs there is no SLA; an unreadable process instance stays in the document.
+        assertTrue(response.at("/items/1/businessObject/serviceSla").isNull());
+        assertTrue(response.at("/items/2/businessObject/serviceSla").isNull());
+        assertEquals("broken", response.at("/items/2/businessObject/currentProcessInstance").asText());
     }
 
     @Test

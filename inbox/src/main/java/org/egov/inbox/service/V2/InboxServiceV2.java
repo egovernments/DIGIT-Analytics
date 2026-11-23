@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wnameless.json.flattener.JsonFlattener;
 import com.google.gson.Gson;
+import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
 import org.egov.hash.HashService;
@@ -100,7 +101,15 @@ public class InboxServiceV2 {
         items.forEach(item -> {
             if(item.getBusinessObject().containsKey(CURRENT_PROCESS_INSTANCE_CONSTANT)) {
                 // Set process instance object in the native process instance field declared in the model inbox class.
-                ProcessInstance processInstance = mapper.convertValue(item.getBusinessObject().get(CURRENT_PROCESS_INSTANCE_CONSTANT), ProcessInstance.class);
+                // A value that is not a process instance stays in the business object, so one bad
+                // document cannot fail the page.
+                ProcessInstance processInstance;
+                try {
+                    processInstance = mapper.convertValue(item.getBusinessObject().get(CURRENT_PROCESS_INSTANCE_CONSTANT), ProcessInstance.class);
+                } catch (IllegalArgumentException e) {
+                    log.warn("Inbox document has an unreadable {}: {}", CURRENT_PROCESS_INSTANCE_CONSTANT, e.getMessage());
+                    return;
+                }
                 item.setProcessInstance(processInstance);
 
                 // Remove current process instance from business object in order to avoid having redundant data in response.
@@ -166,29 +175,38 @@ public class InboxServiceV2 {
         return transformedStatusMap;
     }
 
-    private Long getApplicationServiceSla(Map<String, Long> businessServiceSlaMap, Map<String, Long> stateUuidSlaMap, Object data) {
+    /**
+     * Days left on the document's SLA: the state's SLA from its last change when the state has one,
+     * else the business service's SLA from creation. Null when the document lacks what that needs
+     * (state, business service, audit times), so one incomplete document cannot fail the page.
+     */
+    private Long getApplicationServiceSla(Map<String, Long> businessServiceSlaMap, Map<String, Long> stateUuidSlaMap, Map<String, Object> data) {
 
-        Long currentDate = System.currentTimeMillis(); //current time
-        Map<String, Object> auditDetails = (Map<String, Object>) ((Map<String, Object>) data).get(AUDIT_DETAILS_KEY);
-        String stateUuid = JsonPath.read(data, STATE_UUID_PATH);
-        if(stateUuidSlaMap.containsKey(stateUuid)){
-            if (!ObjectUtils.isEmpty(auditDetails.get(LAST_MODIFIED_TIME_KEY))) {
-                Long lastModifiedTime = ((Number) auditDetails.get(LAST_MODIFIED_TIME_KEY)).longValue();
-
-                return Long.valueOf(Math.round((stateUuidSlaMap.get(stateUuid) - (currentDate - lastModifiedTime)) / ((double) (24 * 60 * 60 * 1000))));
+        long currentDate = System.currentTimeMillis();
+        Map<?, ?> auditDetails = data.get(AUDIT_DETAILS_KEY) instanceof Map<?, ?> map ? map : Map.of();
+        Object stateUuid = readOrNull(data, STATE_UUID_PATH);
+        if (stateUuid != null && stateUuidSlaMap.containsKey(stateUuid)) {
+            if (auditDetails.get(LAST_MODIFIED_TIME_KEY) instanceof Number lastModifiedTime) {
+                return Math.round((stateUuidSlaMap.get(stateUuid) - (currentDate - lastModifiedTime.longValue())) / ((double) (24 * 60 * 60 * 1000)));
             }
-        }else {
-            if (!ObjectUtils.isEmpty(auditDetails.get(CREATED_TIME_KEY))) {
-                Long createdTime = ((Number) auditDetails.get(CREATED_TIME_KEY)).longValue();
-                String businessService = JsonPath.read(data, BUSINESS_SERVICE_PATH);
-                Long businessServiceSLA = businessServiceSlaMap.get(businessService);
-                if (businessServiceSLA == null)
-                    return null;
+        } else if (auditDetails.get(CREATED_TIME_KEY) instanceof Number createdTime) {
+            Object businessService = readOrNull(data, BUSINESS_SERVICE_PATH);
+            Long businessServiceSLA = businessService == null ? null : businessServiceSlaMap.get(businessService);
+            if (businessServiceSLA == null)
+                return null;
 
-                return Long.valueOf(Math.round((businessServiceSLA - (currentDate - createdTime)) / ((double) (24 * 60 * 60 * 1000))));
-            }
+            return Math.round((businessServiceSLA - (currentDate - createdTime.longValue())) / ((double) (24 * 60 * 60 * 1000)));
         }
         return null;
+    }
+
+    /** The value at a definite path, or null when the document does not have it. */
+    private static Object readOrNull(Map<String, Object> data, String path) {
+        try {
+            return JsonPath.read(data, path);
+        } catch (InvalidPathException e) {
+            return null;
+        }
     }
 
     private List<HashMap<String,Object>> transformStatusMap(InboxRequest request,HashMap<String, Object> statusCountMap) {
