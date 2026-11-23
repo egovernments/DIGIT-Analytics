@@ -10,6 +10,12 @@ import java.util.List;
  * compares epoch-millis criteria ({@code timestampColumns}). A later change to the table is added here
  * as another idempotent statement ({@code ADD COLUMN IF NOT EXISTS}, ...), since every existing
  * tenant runs the list again after a restart.
+ *
+ * <p>Indexes, for the searches an inbox UI sends (module and business service always given):
+ * {@code inbox_item_search_idx} finds and counts a service's items by state;
+ * {@code inbox_item_page_idx} reads a service's items newest first, so a page stops after its rows
+ * instead of sorting every match. {@code attributes.<key>} and WILDCARD criteria have no index: a
+ * product that searches on them adds one for its keys (an expression index, or pg_trgm).
  */
 public final class InboxItemTable {
 
@@ -37,6 +43,8 @@ public final class InboxItemTable {
                     + "PRIMARY KEY (inbox_module, business_id))",
             "CREATE INDEX IF NOT EXISTS inbox_item_search_idx ON " + NAME
                     + " (inbox_module, module, business_service, state, created_at DESC)",
+            "CREATE INDEX IF NOT EXISTS inbox_item_page_idx ON " + NAME
+                    + " (inbox_module, module, business_service, created_at DESC, business_id DESC)",
             "CREATE INDEX IF NOT EXISTS inbox_item_updated_idx ON " + NAME + " (inbox_module, updated_at)",
             "CREATE INDEX IF NOT EXISTS inbox_item_assignees_idx ON " + NAME + " USING gin (assignees jsonb_path_ops)");
 

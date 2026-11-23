@@ -34,6 +34,14 @@ The service aggregates data from workflow and configured municipal services, to 
 `_search` : This API is used to search inbox application data based on the criteria provided
 
 
+### Postgres store: inbox_item indexes
+
+The `inbox_item` table (one per tenant schema) is indexed for searches that always give `module` and
+`businessService`: by state for counts, and newest first for pages. A configuration that searches on
+`attributes.<key>` or uses the `WILDCARD` operator has no index for it; the product adds one for its
+keys in each tenant schema, for example
+`CREATE INDEX ON inbox_item ((attributes ->> 'serviceCode'))`, or a `pg_trgm` GIN index for `WILDCARD`.
+
 
 ### Reference Document
 TBD

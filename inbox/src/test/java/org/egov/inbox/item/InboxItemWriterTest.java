@@ -89,6 +89,48 @@ class InboxItemWriterTest {
     }
 
     @Test
+    void aNewTableHasThePageIndex() throws Exception {
+        assertTrue(indexes("STUDIO").contains("inbox_item_page_idx"), indexes("STUDIO").toString());
+    }
+
+    @Test
+    void aTableFromBeforeThePageIndexGetsItOnTheFirstItemAfterARestart() throws Exception {
+        try (Connection c = admin(); Statement s = c.createStatement()) {
+            s.execute("CREATE SCHEMA \"OLDTABLE\"");
+            s.execute("GRANT USAGE, CREATE ON SCHEMA \"OLDTABLE\" TO inbox_user");
+        }
+        // The table as an earlier inbox created it (owned by the inbox's user), without the page index.
+        try (Connection c = DriverManager.getConnection(POSTGRES.getJdbcUrl(), "inbox_user", "inbox"); Statement s = c.createStatement()) {
+            s.execute("SET search_path = \"OLDTABLE\"");
+            for (String ddl : InboxItemTable.DDL) {
+                if (!ddl.contains("inbox_item_page_idx")) {
+                    s.execute(ddl);
+                }
+            }
+        }
+        assertFalse(indexes("OLDTABLE").contains("inbox_item_page_idx"));
+
+        InboxItemWriter restarted = new InboxItemWriter(POSTGRES.getJdbcUrl(), "inbox_user", "inbox", 1, 5000, new ObjectMapper());
+        try {
+            restarted.write(item("OLDTABLE", "public-services", "APP-1", "PENDING", List.of(), NOV_1, NOV_1, Map.of()));
+        } finally {
+            restarted.destroy();
+        }
+        assertTrue(indexes("OLDTABLE").contains("inbox_item_page_idx"), indexes("OLDTABLE").toString());
+    }
+
+    private static List<String> indexes(String schema) throws Exception {
+        List<String> names = new ArrayList<>();
+        try (Connection c = admin(); Statement s = c.createStatement();
+             ResultSet rs = s.executeQuery("SELECT indexname FROM pg_indexes WHERE schemaname = '" + schema + "' AND tablename = 'inbox_item' ORDER BY 1")) {
+            while (rs.next()) {
+                names.add(rs.getString(1));
+            }
+        }
+        return names;
+    }
+
+    @Test
     void aSearchSeesItsTenantAndItsModuleOnly() {
         assertEquals(List.of("STUDIO/public-services/APP-2", "STUDIO/public-services/APP-1"),
                 ids(store.search(query("STUDIO", "public-services", new HashMap<>(), process("PENDING", "APPROVED")))));
