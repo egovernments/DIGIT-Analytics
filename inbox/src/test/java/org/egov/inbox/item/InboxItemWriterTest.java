@@ -141,6 +141,26 @@ class InboxItemWriterTest {
     }
 
     @Test
+    void aConfigurationOfTheInboxTableNeedsOnlyItsModuleAndCriteria() {
+        InboxQueryConfiguration minimal = InboxQueryConfiguration.builder()
+                .module("public-services").store("POSTGRES").index(InboxItemTable.NAME)
+                .allowedSearchCriteria(List.of(
+                        SearchParam.builder().name("status").path("state").build(),
+                        SearchParam.builder().name("fromDate").path("created_at").operator(SearchParam.Operator.GTE).build()))
+                .build();
+        InboxQuery all = new InboxQuery(minimal, "STUDIO", new HashMap<>(), process("PENDING", "APPROVED"), 0, 10);
+
+        // Newest first, the state column, updated_at for nearing SLA, created_at compared as a timestamp.
+        assertEquals(List.of("STUDIO/public-services/APP-2", "STUDIO/public-services/APP-1"), ids(store.search(all)));
+        assertEquals(Map.of("PENDING", 1, "APPROVED", 1), store.countByState(all));
+        assertEquals(1, store.countModifiedBetween(all, NOV_10, NOV_10));
+        Map<String, Object> from = new HashMap<>();
+        from.put("fromDate", NOV_5);
+        assertEquals(List.of("STUDIO/public-services/APP-2"),
+                ids(store.search(new InboxQuery(minimal, "STUDIO", from, process("PENDING", "APPROVED"), 0, 10))));
+    }
+
+    @Test
     void countsAssigneesAttributesAndTimesWorkOnTheTable() {
         InboxQuery all = query("STUDIO", "public-services", new HashMap<>(), process("PENDING", "APPROVED"));
         assertEquals(2, store.count(all));

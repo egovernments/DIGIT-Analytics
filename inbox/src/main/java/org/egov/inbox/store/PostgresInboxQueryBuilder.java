@@ -91,7 +91,7 @@ public class PostgresInboxQueryBuilder {
     public Sql countByState(InboxQuery query) {
         List<Object> params = new ArrayList<>();
         String where = where(query, params);
-        return new Sql("SELECT " + column(query.config(), query.config().getStatePath()) + "::text, count(*) FROM "
+        return new Sql("SELECT " + column(query.config(), required(query.config(), "statePath", query.config().getStatePath())) + "::text, count(*) FROM "
                 + relation(query.config()) + where + " GROUP BY 1", params);
     }
 
@@ -100,7 +100,7 @@ public class PostgresInboxQueryBuilder {
         String where = where(query, params);
         params.add(from);
         params.add(to);
-        String lastModified = column(query.config(), query.config().getLastModifiedPath());
+        String lastModified = column(query.config(), required(query.config(), "lastModifiedPath", query.config().getLastModifiedPath()));
         String value = isTimestamp(query.config(), lastModified) ? MILLIS_AS_UTC_TIMESTAMP : MILLIS;
         return new Sql("SELECT count(*) FROM " + relation(query.config()) + where + " AND "
                 + lastModified + " BETWEEN " + value + " AND " + value, params);
@@ -242,6 +242,14 @@ public class PostgresInboxQueryBuilder {
                     + (schemaPerTenant ? " without a schema (the tenant's schema is used)" : "") + ", got '" + relation + "'");
         }
         return relation;
+    }
+
+    /** A setting the configuration must give for a relation other than the inbox's own table. */
+    private static String required(InboxQueryConfiguration config, String setting, String value) {
+        if (value == null || value.isBlank()) {
+            throw configError(config, setting + " is required for the Postgres store");
+        }
+        return value;
     }
 
     /** The SQL for a path: the column itself, or the text of a key inside a jsonb column. */

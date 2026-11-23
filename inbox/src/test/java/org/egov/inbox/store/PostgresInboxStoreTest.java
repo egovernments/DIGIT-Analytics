@@ -232,6 +232,22 @@ class PostgresInboxStoreTest {
     }
 
     @Test
+    void aProductRelationNeedsItsStateAndLastModifiedColumns() {
+        InboxQueryConfiguration noState = config();
+        noState.setStatePath(null);
+        CustomException e = assertThrows(CustomException.class,
+                () -> store.countByState(new InboxQuery(noState, "STUDIO", criteria(), process("PENDING_APPROVAL"), 0, 10)));
+        assertEquals("INBOX_STORE_CONFIG_INVALID", e.getCode());
+        assertEquals("Inbox configuration of module studio: statePath is required for the Postgres store", e.getMessage());
+
+        InboxQueryConfiguration noLastModified = config();
+        noLastModified.setLastModifiedPath(null);
+        assertEquals("Inbox configuration of module studio: lastModifiedPath is required for the Postgres store",
+                assertThrows(CustomException.class, () -> store.countModifiedBetween(
+                        new InboxQuery(noLastModified, "STUDIO", criteria(), process("PENDING_APPROVAL"), 0, 10), 0, 1)).getMessage());
+    }
+
+    @Test
     void aMissingProductRelationIsAConfigurationError() {
         InboxQueryConfiguration missing = config();
         missing.setIndex("inbox_missing");
