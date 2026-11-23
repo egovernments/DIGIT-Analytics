@@ -35,7 +35,10 @@ public class GatewayPlatformStartup {
             "org.egov.inbox.service.WorkflowService",
             "org.egov.inbox.util.MDMSUtil",
             "org.egov.inbox.repository.ServiceRequestRepository",
-            "org.egov.inbox.config.InboxConfiguration");
+            "org.egov.inbox.config.InboxConfiguration",
+            // Creates the item and dead-letter topics at startup (InboxItemConfiguration.inboxItemTopics).
+            "org.springframework.kafka.core.KafkaAdmin",
+            "org.springframework.kafka.core.KafkaAdmin$NewTopics");
 
     @Bean
     static LazyInitializationBeanFactoryPostProcessor lazyBeansOnGateway() {

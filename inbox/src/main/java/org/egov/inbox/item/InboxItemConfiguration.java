@@ -1,5 +1,8 @@
 package org.egov.inbox.item;
 
+import java.sql.SQLException;
+import java.sql.SQLRecoverableException;
+import java.sql.SQLTransientConnectionException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +17,7 @@ import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.NestedExceptionUtils;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.TopicBuilder;
@@ -24,6 +28,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ConsumerRecordRecoverer;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.util.backoff.BackOff;
+import org.springframework.util.backoff.ExponentialBackOff;
 import org.springframework.util.backoff.FixedBackOff;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,9 +43,12 @@ import lombok.extern.slf4j.Slf4j;
  * database settings ({@code inbox.postgres-store.*}).
  *
  * <p>Messages are plain JSON strings, whatever serializers the environment configures for other
- * services. A failed write is retried {@code inbox.item.retries} times, one second apart; then, or at
- * once for a message that is not a valid item, the message goes to {@code inbox.item.dead-letter-topic}
- * (only logged when that is empty) and the next one is read.
+ * services. A message that is not a valid item goes to {@code inbox.item.dead-letter-topic} at once
+ * (only logged when that is empty) and the next one is read. While the database cannot be reached, the
+ * write is retried until it can, waiting {@code inbox.item.database-retry.initial-interval-millis}
+ * (doubling up to {@code inbox.item.database-retry.max-interval-millis}) between tries: the items wait
+ * in the topic instead of being dead-lettered by an outage. Any other failed write is retried
+ * {@code inbox.item.retries} times, one second apart, then dead-lettered.
  */
 @Slf4j
 @EnableKafka
@@ -85,7 +95,9 @@ public class InboxItemConfiguration {
             KafkaProperties kafka,
             @Value("${inbox.item.dead-letter-topic:}") String deadLetterTopic,
             @Value("${inbox.item.retries:2}") long retries,
-            @Value("${inbox.item.concurrency:1}") int concurrency) {
+            @Value("${inbox.item.concurrency:1}") int concurrency,
+            @Value("${inbox.item.database-retry.initial-interval-millis:1000}") long databaseRetryInitialMillis,
+            @Value("${inbox.item.database-retry.max-interval-millis:30000}") long databaseRetryMaxMillis) {
         Map<String, Object> consumer = kafka.buildConsumerProperties();
         // A new consumer group starts from the oldest message, so items sent before the first start are stored.
         consumer.put("auto.offset.reset", "earliest");
@@ -94,6 +106,10 @@ public class InboxItemConfiguration {
         factory.setConcurrency(concurrency);
         DefaultErrorHandler errors = new DefaultErrorHandler(recoverer(kafka, deadLetterTopic), new FixedBackOff(1000L, retries));
         errors.addNotRetryableExceptions(InboxItem.InvalidInboxItemException.class);
+        BackOff untilDatabaseIsBack = untilDatabaseIsBack(databaseRetryInitialMillis, databaseRetryMaxMillis);
+        // null: the fixed back-off above. The tracked attempts restart when the failure changes, so an item
+        // that waited out an outage still gets its few retries if it then fails for another reason.
+        errors.setBackOffFunction((record, e) -> databaseUnavailable(e) ? untilDatabaseIsBack : null);
         factory.setCommonErrorHandler(errors);
         return factory;
     }
@@ -111,6 +127,33 @@ public class InboxItemConfiguration {
             // Any partition: the dead-letter topic need not have as many partitions as the item topic.
             return new TopicPartition(deadLetterTopic, -1);
         });
+    }
+
+    /** Retries without end, doubling the wait up to the maximum (well under the consumer's max.poll.interval.ms). */
+    private static BackOff untilDatabaseIsBack(long initialMillis, long maxMillis) {
+        ExponentialBackOff backOff = new ExponentialBackOff(initialMillis, 2.0);
+        backOff.setMaxInterval(maxMillis);
+        backOff.setMaxElapsedTime(Long.MAX_VALUE);
+        return backOff;
+    }
+
+    /**
+     * Whether the write failed because the database could not be reached (no connection from the pool,
+     * a lost connection, a server shutting down or starting): the item itself is fine and will be
+     * written once the database is back. SQL states: class 08 connection exceptions, 57P01-57P03.
+     */
+    static boolean databaseUnavailable(Throwable e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause() == cause ? null : cause.getCause()) {
+            if (cause instanceof CannotCreateTransactionException || cause instanceof CannotGetJdbcConnectionException
+                    || cause instanceof SQLTransientConnectionException || cause instanceof SQLRecoverableException) {
+                return true;
+            }
+            if (cause instanceof SQLException sql && sql.getSQLState() != null
+                    && (sql.getSQLState().startsWith("08") || sql.getSQLState().matches("57P0[123]"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The reason itself, not the listener's wrapper around it. */
