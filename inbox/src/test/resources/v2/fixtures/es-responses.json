@@ -1,0 +1,76 @@
+{
+  "_comment": "Elasticsearch answers for public-service-index. Values \"@now-<days>d<hours>h\" become epoch millis relative to the test's clock.",
+  "hits": {
+    "took": 3,
+    "timed_out": false,
+    "hits": {
+      "total": { "value": 2, "relation": "eq" },
+      "hits": [
+        {
+          "_index": "public-service-index",
+          "_id": "APP-1dev",
+          "_source": {
+            "Data": {
+              "applicationNumber": "APP-1",
+              "businessService": "show",
+              "module": "Demo",
+              "status": "ACTIVE",
+              "serviceCode": "SVC-DEMO-SHOW",
+              "auditDetails": { "createdBy": "u-citizen", "createdTime": "@now-6d0h", "lastModifiedBy": "u-employee", "lastModifiedTime": "@now-2d1h" },
+              "currentProcessInstance": {
+                "id": "pi-1",
+                "tenantId": "dev",
+                "businessService": "Demo.show",
+                "businessId": "APP-1",
+                "action": "APPLY",
+                "state": { "uuid": "wf-state-pending", "state": "PENDING_APPROVAL", "applicationStatus": "PENDINGAPPROVAL" },
+                "assignes": [ { "uuid": "u-employee" } ]
+              }
+            }
+          }
+        },
+        {
+          "_index": "public-service-index",
+          "_id": "APP-2dev",
+          "_source": {
+            "Data": {
+              "applicationNumber": "APP-2",
+              "businessService": "show",
+              "module": "Demo",
+              "status": "ACTIVE",
+              "serviceCode": "SVC-DEMO-SHOW",
+              "auditDetails": { "createdBy": "u-citizen", "createdTime": "@now-4d1h", "lastModifiedBy": "u-employee", "lastModifiedTime": "@now-1d0h" },
+              "currentProcessInstance": {
+                "id": "pi-2",
+                "tenantId": "dev",
+                "businessService": "Demo.show",
+                "businessId": "APP-2",
+                "action": "SENDFORVERIFICATION",
+                "state": { "uuid": "wf-state-verify", "state": "PENDING_VERIFICATION", "applicationStatus": "PENDINGVERIFICATION" },
+                "assignes": null
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "aggregations": {
+    "took": 2,
+    "timed_out": false,
+    "hits": { "total": { "value": 5, "relation": "eq" }, "hits": [] },
+    "aggregations": {
+      "statusCount": {
+        "doc_count_error_upper_bound": 0,
+        "sum_other_doc_count": 0,
+        "buckets": [
+          { "key": "wf-state-pending", "doc_count": 1 },
+          { "key": "wf-state-verify", "doc_count": 1 },
+          { "key": "wf-state-approved", "doc_count": 3 }
+        ]
+      }
+    }
+  },
+  "count": { "count": 2 },
+  "nearingSlaCount": { "count": 1 }
+}

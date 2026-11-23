@@ -77,8 +77,7 @@ public class InboxApplication {
 	@Bean
 	@Profile("!test")
 	public CacheManager cacheManager(){
-		return new SpringCache2kCacheManager().addCaches(b->b.name("businessServices").expireAfterWrite(cacheExpiry, TimeUnit.MINUTES)
-				.entryCapacity(10)).addCaches(b->b.name("inboxConfiguration").expireAfterWrite(cacheExpiry, TimeUnit.MINUTES)
+		return new SpringCache2kCacheManager().addCaches(b->b.name("inboxConfiguration").expireAfterWrite(cacheExpiry, TimeUnit.MINUTES)
 				.entryCapacity(10));
 	}
 
